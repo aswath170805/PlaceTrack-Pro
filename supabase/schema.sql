@@ -1,7 +1,5 @@
 -- PlaceTrack Pro Database Schema & Row-Level Security Policies
--- Executed on Supabase / Postgres
 
--- Enable UUID extension
 CREATE EXTENSION IF NOT EXISTS "uuid-ossp";
 
 -- 1. Profiles (Extends auth.users)
@@ -12,6 +10,7 @@ CREATE TABLE IF NOT EXISTS public.profiles (
   department TEXT,
   year_of_study TEXT,
   batch_id UUID,
+  is_verified BOOLEAN DEFAULT false,
   created_at TIMESTAMPTZ DEFAULT NOW()
 );
 
@@ -93,7 +92,7 @@ CREATE TABLE IF NOT EXISTS public.attempt_answers (
 CREATE TABLE IF NOT EXISTS public.proctoring_events (
   id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
   attempt_id UUID REFERENCES public.test_attempts(id) ON DELETE CASCADE,
-  event_type TEXT CHECK (event_type IN ('multiple_faces', 'no_face', 'gaze_away', 'phone_detected', 'tab_switch', 'window_blur', 'copy_paste')),
+  event_type TEXT CHECK (event_type IN ('multiple_faces', 'no_face', 'gaze_away', 'phone_detected', 'audio_noise', 'tab_switch', 'window_blur', 'copy_paste')),
   severity TEXT CHECK (severity IN ('low', 'medium', 'high')),
   snapshot_url TEXT,
   created_at TIMESTAMPTZ DEFAULT NOW()
@@ -122,7 +121,7 @@ CREATE TABLE IF NOT EXISTS public.audit_logs (
   created_at TIMESTAMPTZ DEFAULT NOW()
 );
 
--- Enable Row Level Security (RLS) on all tables
+-- Enable RLS
 ALTER TABLE public.profiles ENABLE ROW LEVEL SECURITY;
 ALTER TABLE public.batches ENABLE ROW LEVEL SECURITY;
 ALTER TABLE public.question_banks ENABLE ROW LEVEL SECURITY;
@@ -134,85 +133,3 @@ ALTER TABLE public.attempt_answers ENABLE ROW LEVEL SECURITY;
 ALTER TABLE public.proctoring_events ENABLE ROW LEVEL SECURITY;
 ALTER TABLE public.attendance ENABLE ROW LEVEL SECURITY;
 ALTER TABLE public.audit_logs ENABLE ROW LEVEL SECURITY;
-
--- Helper RLS Functions
-CREATE OR REPLACE FUNCTION public.get_user_role() 
-RETURNS TEXT AS $$
-  SELECT role FROM public.profiles WHERE id = auth.uid();
-$$ LANGUAGE sql STABLE SECURITY DEFINER;
-
--- RLS Policies
-
--- PROFILES: Users read self; Faculty/Admin read all.
-CREATE POLICY "Users view own profile" ON public.profiles FOR SELECT USING (auth.uid() = id OR public.get_user_role() IN ('faculty', 'admin'));
-CREATE POLICY "Users update own profile" ON public.profiles FOR UPDATE USING (auth.uid() = id OR public.get_user_role() = 'admin');
-
--- BATCHES: Authenticated read; Faculty/Admin manage.
-CREATE POLICY "All authenticated users view batches" ON public.batches FOR SELECT USING (auth.role() = 'authenticated');
-CREATE POLICY "Faculty/Admin manage batches" ON public.batches FOR ALL USING (public.get_user_role() IN ('faculty', 'admin'));
-
--- QUESTION BANKS & QUESTIONS: Faculty/Admin manage; Students read.
-CREATE POLICY "Faculty/Admin manage question banks" ON public.question_banks FOR ALL USING (public.get_user_role() IN ('faculty', 'admin'));
-CREATE POLICY "Students view question banks" ON public.question_banks FOR SELECT USING (auth.role() = 'authenticated');
-
-CREATE POLICY "Faculty/Admin manage questions" ON public.questions FOR ALL USING (public.get_user_role() IN ('faculty', 'admin'));
-CREATE POLICY "Students view questions" ON public.questions FOR SELECT USING (auth.role() = 'authenticated');
-
--- TESTS & TEST QUESTIONS: Everyone view; Faculty/Admin manage.
-CREATE POLICY "View tests" ON public.tests FOR SELECT USING (auth.role() = 'authenticated');
-CREATE POLICY "Manage tests" ON public.tests FOR ALL USING (public.get_user_role() IN ('faculty', 'admin'));
-
-CREATE POLICY "View test_questions" ON public.test_questions FOR SELECT USING (auth.role() = 'authenticated');
-CREATE POLICY "Manage test_questions" ON public.test_questions FOR ALL USING (public.get_user_role() IN ('faculty', 'admin'));
-
--- TEST ATTEMPTS: Students manage own attempts; Faculty/Admin view all.
-CREATE POLICY "Students view own test attempts" ON public.test_attempts FOR SELECT USING (student_id = auth.uid() OR public.get_user_role() IN ('faculty', 'admin'));
-CREATE POLICY "Students create own test attempts" ON public.test_attempts FOR INSERT WITH CHECK (student_id = auth.uid());
-CREATE POLICY "Students update own test attempts" ON public.test_attempts FOR UPDATE USING (student_id = auth.uid() OR public.get_user_role() IN ('faculty', 'admin'));
-
--- ATTEMPT ANSWERS: Students insert/select own answers; Faculty/Admin view all.
-CREATE POLICY "Students manage attempt answers" ON public.attempt_answers FOR ALL USING (
-  EXISTS (
-    SELECT 1 FROM public.test_attempts ta WHERE ta.id = attempt_answers.attempt_id AND ta.student_id = auth.uid()
-  ) OR public.get_user_role() IN ('faculty', 'admin')
-);
-
--- PROCTORING EVENTS: Students insert events; Faculty/Admin view all.
-CREATE POLICY "Students insert proctoring events" ON public.proctoring_events FOR INSERT WITH CHECK (
-  EXISTS (
-    SELECT 1 FROM public.test_attempts ta WHERE ta.id = proctoring_events.attempt_id AND ta.student_id = auth.uid()
-  ) OR public.get_user_role() IN ('faculty', 'admin')
-);
-CREATE POLICY "View proctoring events" ON public.proctoring_events FOR SELECT USING (
-  EXISTS (
-    SELECT 1 FROM public.test_attempts ta WHERE ta.id = proctoring_events.attempt_id AND ta.student_id = auth.uid()
-  ) OR public.get_user_role() IN ('faculty', 'admin')
-);
-
--- ATTENDANCE: Students view & update own; Faculty/Admin full access.
-CREATE POLICY "Students view attendance" ON public.attendance FOR SELECT USING (student_id = auth.uid() OR public.get_user_role() IN ('faculty', 'admin'));
-CREATE POLICY "Students submit absence reason" ON public.attendance FOR UPDATE USING (student_id = auth.uid());
-CREATE POLICY "Faculty/Admin manage attendance" ON public.attendance FOR ALL USING (public.get_user_role() IN ('faculty', 'admin'));
-
--- AUDIT LOGS: Admin only.
-CREATE POLICY "Admin view audit logs" ON public.audit_logs FOR SELECT USING (public.get_user_role() = 'admin');
-
--- Auth Trigger to auto-create profile
-CREATE OR REPLACE FUNCTION public.handle_new_user() 
-RETURNS TRIGGER AS $$
-BEGIN
-  INSERT INTO public.profiles (id, full_name, role, department, year_of_study)
-  VALUES (
-    new.id,
-    COALESCE(new.raw_user_meta_data->>'full_name', 'New User'),
-    COALESCE(new.raw_user_meta_data->>'role', 'student'),
-    COALESCE(new.raw_user_meta_data->>'department', 'Computer Science'),
-    COALESCE(new.raw_user_meta_data->>'year_of_study', 'Final Year')
-  );
-  RETURN new;
-END;
-$$ LANGUAGE plpgsql SECURITY DEFINER;
-
-CREATE OR REPLACE TRIGGER on_auth_user_created
-  AFTER INSERT ON auth.users
-  FOR EACH ROW EXECUTE FUNCTION public.handle_new_user();

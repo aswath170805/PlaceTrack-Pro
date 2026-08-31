@@ -1,10 +1,12 @@
 export interface Profile {
   id: string;
+  email?: string;
   full_name: string;
   role: 'student' | 'faculty' | 'admin';
   department: string;
   year_of_study: string;
   batch_id?: string;
+  is_verified: boolean;
   created_at: string;
 }
 
@@ -82,7 +84,7 @@ export interface ProctoringEvent {
   attempt_id: string;
   student_name?: string;
   test_title?: string;
-  event_type: 'multiple_faces' | 'no_face' | 'gaze_away' | 'phone_detected' | 'tab_switch' | 'window_blur' | 'copy_paste';
+  event_type: 'multiple_faces' | 'no_face' | 'gaze_away' | 'phone_detected' | 'audio_noise' | 'tab_switch' | 'window_blur' | 'copy_paste';
   severity: 'low' | 'medium' | 'high';
   snapshot_url?: string;
   created_at: string;
@@ -111,38 +113,66 @@ export interface AuditLog {
   created_at: string;
 }
 
-// Initial Seed Data
+// Initial Seed Batches
 export const MOCK_BATCHES: Batch[] = [
-  { id: 'b1111111-1111-1111-1111-111111111111', name: 'CS-2026 Batch A', student_count: 45 },
-  { id: 'b2222222-2222-2222-2222-222222222222', name: 'CS-2026 Batch B', student_count: 42 },
-  { id: 'b3333333-3333-3333-3333-333333333333', name: 'IT-2026 Placement Core', student_count: 38 },
+  { id: 'b1111111-1111-1111-1111-111111111111', name: 'CS-2026 Batch A (SVCE)', student_count: 45 },
+  { id: 'b2222222-2222-2222-2222-222222222222', name: 'CS-2026 Batch B (SVCE)', student_count: 42 },
+  { id: 'b3333333-3333-3333-3333-333333333333', name: 'IT-2026 Placement Core (SVCE)', student_count: 38 },
 ];
 
+// Initial Seed Profiles
 export const MOCK_PROFILES: Profile[] = [
   {
     id: 's1111111-1111-1111-1111-111111111111',
+    email: 'student@svce.ac.in',
     full_name: 'Alex Johnson (Student)',
     role: 'student',
     department: 'Computer Science',
     year_of_study: 'Final Year',
     batch_id: 'b1111111-1111-1111-1111-111111111111',
+    is_verified: true,
     created_at: new Date().toISOString(),
   },
   {
     id: 'f2222222-2222-2222-2222-222222222222',
+    email: 'faculty@svce.ac.in',
     full_name: 'Dr. Sarah Connor (Faculty)',
     role: 'faculty',
     department: 'Computer Science',
     year_of_study: 'N/A',
+    is_verified: true,
     created_at: new Date().toISOString(),
   },
   {
     id: 'a3333333-3333-3333-3333-333333333333',
-    full_name: 'Placement Admin',
+    email: 'placetrackpro@admin.co.in',
+    full_name: 'System Admin (PlaceTrack Pro)',
     role: 'admin',
     department: 'Placement Cell',
     year_of_study: 'N/A',
+    is_verified: true,
     created_at: new Date().toISOString(),
+  },
+  {
+    id: 'unv-student-1',
+    email: 'ramesh.k@svce.ac.in',
+    full_name: 'Ramesh Kumar',
+    role: 'student',
+    department: 'Information Technology',
+    year_of_study: 'Final Year',
+    batch_id: 'b3333333-3333-3333-3333-333333333333',
+    is_verified: false,
+    created_at: new Date(Date.now() - 3600000 * 2).toISOString(),
+  },
+  {
+    id: 'unv-teacher-1',
+    email: 'meena.s@svce.ac.in',
+    full_name: 'Prof. Meena Sundaram',
+    role: 'faculty',
+    department: 'Electronics & Comm',
+    year_of_study: 'N/A',
+    is_verified: false,
+    created_at: new Date(Date.now() - 3600000 * 5).toISOString(),
   },
 ];
 
@@ -189,7 +219,7 @@ export const MOCK_QUESTIONS: Question[] = [
     difficulty: 'medium',
     content: {
       questionText: 'Write a function `twoSum(nums, target)` that returns indices of the two numbers such that they add up to target.',
-      starterCode: 'function twoSum(nums, target) {\n  // Write your code here\n  \n}',
+      starterCode: 'function twoSum(nums, target) {\n  // Write your solution here\n  \n}',
       testCases: [
         { input: 'nums = [2,7,11,15], target = 9', expectedOutput: '[0, 1]' },
         { input: 'nums = [3,2,4], target = 6', expectedOutput: '[1, 2]' },
@@ -234,7 +264,7 @@ export const MOCK_TESTS: Test[] = [
     title: 'Daily Practice - Aptitude & Core CS #14',
     type: 'daily_practice',
     batch_id: 'b1111111-1111-1111-1111-111111111111',
-    batch_name: 'CS-2026 Batch A',
+    batch_name: 'CS-2026 Batch A (SVCE)',
     start_time: new Date(Date.now() - 3600000 * 24).toISOString(),
     end_time: new Date(Date.now() + 3600000 * 48).toISOString(),
     duration_minutes: 20,
@@ -244,10 +274,10 @@ export const MOCK_TESTS: Test[] = [
   },
   {
     id: 't-102',
-    title: 'Weekly Proctored Mock Assessment - Amazon/Google Prep',
+    title: 'Weekly Proctored Mock Assessment - TCS NQT / Amazon Prep',
     type: 'weekly_assessment',
     batch_id: 'b1111111-1111-1111-1111-111111111111',
-    batch_name: 'CS-2026 Batch A',
+    batch_name: 'CS-2026 Batch A (SVCE)',
     start_time: new Date(Date.now() - 3600000 * 2).toISOString(),
     end_time: new Date(Date.now() + 3600000 * 72).toISOString(),
     duration_minutes: 45,
@@ -274,7 +304,7 @@ export const MOCK_TEST_ATTEMPTS: TestAttempt[] = [
   {
     id: 'att-2',
     test_id: 't-102',
-    test_title: 'Weekly Proctored Mock Assessment - Amazon/Google Prep',
+    test_title: 'Weekly Proctored Mock Assessment - TCS NQT / Amazon Prep',
     student_id: 's1111111-1111-1111-1111-111111111111',
     student_name: 'Alex Johnson',
     started_at: new Date(Date.now() - 1800000).toISOString(),
@@ -291,7 +321,7 @@ export const MOCK_PROCTORING_EVENTS: ProctoringEvent[] = [
     id: 'pe-1',
     attempt_id: 'att-2',
     student_name: 'Alex Johnson',
-    test_title: 'Weekly Proctored Mock Assessment - Amazon/Google Prep',
+    test_title: 'Weekly Proctored Mock Assessment',
     event_type: 'tab_switch',
     severity: 'medium',
     snapshot_url: 'https://images.unsplash.com/photo-1516321318423-f06f85e504b3?w=400&auto=format&fit=crop&q=60',
@@ -301,11 +331,21 @@ export const MOCK_PROCTORING_EVENTS: ProctoringEvent[] = [
     id: 'pe-2',
     attempt_id: 'att-2',
     student_name: 'Alex Johnson',
-    test_title: 'Weekly Proctored Mock Assessment - Amazon/Google Prep',
+    test_title: 'Weekly Proctored Mock Assessment',
     event_type: 'gaze_away',
     severity: 'low',
     snapshot_url: 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=400&auto=format&fit=crop&q=60',
     created_at: new Date(Date.now() - 600000).toISOString(),
+  },
+  {
+    id: 'pe-3',
+    attempt_id: 'att-2',
+    student_name: 'Alex Johnson',
+    test_title: 'Weekly Proctored Mock Assessment',
+    event_type: 'audio_noise',
+    severity: 'high',
+    snapshot_url: 'https://images.unsplash.com/photo-1516321318423-f06f85e504b3?w=400&auto=format&fit=crop&q=60',
+    created_at: new Date(Date.now() - 300000).toISOString(),
   },
 ];
 
@@ -337,21 +377,21 @@ export const MOCK_AUDIT_LOGS: AuditLog[] = [
   {
     id: 'log-1',
     actor_id: 'a3333333-3333-3333-3333-333333333333',
-    actor_name: 'Placement Admin',
+    actor_name: 'System Admin',
     action: 'CREATE_TEST',
     target_table: 'tests',
     target_id: 't-102',
-    metadata: { title: 'Weekly Proctored Mock Assessment', batch: 'CS-2026 Batch A' },
+    metadata: { title: 'Weekly Proctored Mock Assessment', batch: 'CS-2026 Batch A (SVCE)' },
     created_at: new Date(Date.now() - 3600000 * 10).toISOString(),
   },
   {
     id: 'log-2',
     actor_id: 'a3333333-3333-3333-3333-333333333333',
-    actor_name: 'Placement Admin',
-    action: 'UPDATE_ROLE',
+    actor_name: 'System Admin',
+    action: 'VERIFY_USER_ACCESS',
     target_table: 'profiles',
-    target_id: 'f2222222-2222-2222-2222-222222222222',
-    metadata: { new_role: 'faculty', updated_by: 'Placement Admin' },
+    target_id: 's1111111-1111-1111-1111-111111111111',
+    metadata: { email: 'student@svce.ac.in', is_verified: true, updated_by: 'System Admin' },
     created_at: new Date(Date.now() - 3600000 * 5).toISOString(),
   },
 ];

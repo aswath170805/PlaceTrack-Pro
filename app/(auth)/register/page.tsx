@@ -5,7 +5,7 @@ import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import { useAuth } from '@/lib/authContext';
 import { MOCK_BATCHES } from '@/lib/mockData';
-import { GraduationCap, Lock, Mail, User, BookOpen, ArrowRight, AlertCircle } from 'lucide-react';
+import { GraduationCap, Lock, Mail, User, BookOpen, ArrowRight, AlertCircle, Clock } from 'lucide-react';
 
 export default function RegisterPage() {
   const router = useRouter();
@@ -19,10 +19,17 @@ export default function RegisterPage() {
   const [yearOfStudy, setYearOfStudy] = useState<string>('Final Year');
   const [batchId, setBatchId] = useState<string>(MOCK_BATCHES[0].id);
   const [errorMsg, setErrorMsg] = useState<string | null>(null);
+  const [pendingNotice, setPendingNotice] = useState<boolean>(false);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setErrorMsg(null);
+    setPendingNotice(false);
+
+    if (!email.toLowerCase().trim().endsWith('@svce.ac.in')) {
+      setErrorMsg('Registration Rejected: Email MUST end with @svce.ac.in!');
+      return;
+    }
 
     const res = await signUpWithEmail({
       email,
@@ -34,7 +41,10 @@ export default function RegisterPage() {
       batchId,
     });
 
-    if (res.success) {
+    if (res.pendingVerification) {
+      setPendingNotice(true);
+      setErrorMsg('Registration Submitted! Your account is queued for Admin Verification. Access will be granted once verified by Placement Cell.');
+    } else if (res.success) {
       if (role === 'faculty') router.push('/faculty');
       else router.push('/student');
     } else {
@@ -55,9 +65,9 @@ export default function RegisterPage() {
           </div>
         </Link>
 
-        <h2 className="text-3xl font-black tracking-tight text-white">Create College Account</h2>
+        <h2 className="text-3xl font-black tracking-tight text-white">Create SVCE Account</h2>
         <p className="mt-2 text-xs text-slate-400">
-          Register your student or faculty profile for PlaceTrack Pro
+          Register your Student or Teacher account (Must use official @svce.ac.in email)
         </p>
       </div>
 
@@ -65,8 +75,10 @@ export default function RegisterPage() {
         <div className="bg-slate-900 border border-slate-800 py-8 px-6 shadow-2xl sm:rounded-3xl sm:px-10">
           
           {errorMsg && (
-            <div className="mb-4 p-3 bg-red-500/10 border border-red-500/30 rounded-xl text-xs text-red-400 flex items-center space-x-2">
-              <AlertCircle className="w-4 h-4 shrink-0" />
+            <div className={`mb-4 p-3 rounded-xl text-xs flex items-start space-x-2 ${
+              pendingNotice ? 'bg-amber-500/10 border border-amber-500/30 text-amber-300' : 'bg-red-500/10 border border-red-500/30 text-red-400'
+            }`}>
+              {pendingNotice ? <Clock className="w-4 h-4 shrink-0 text-amber-400" /> : <AlertCircle className="w-4 h-4 shrink-0" />}
               <span>{errorMsg}</span>
             </div>
           )}
@@ -84,7 +96,7 @@ export default function RegisterPage() {
                     role === 'student' ? 'bg-blue-600 text-white border-blue-500' : 'bg-slate-950 text-slate-400 border-slate-800'
                   }`}
                 >
-                  Student
+                  Student (@svce)
                 </button>
                 <button
                   type="button"
@@ -93,7 +105,7 @@ export default function RegisterPage() {
                     role === 'faculty' ? 'bg-indigo-600 text-white border-indigo-500' : 'bg-slate-950 text-slate-400 border-slate-800'
                   }`}
                 >
-                  Faculty Member
+                  Teacher / Faculty (@svce)
                 </button>
               </div>
             </div>
@@ -107,14 +119,14 @@ export default function RegisterPage() {
                   type="text"
                   value={fullName}
                   onChange={(e) => setFullName(e.target.value)}
-                  placeholder="e.g. Alex Johnson"
+                  placeholder="e.g. Ramesh Kumar"
                   className="w-full pl-10 pr-4 py-2.5 bg-slate-950 border border-slate-800 rounded-xl text-xs text-white placeholder-slate-500 focus:ring-2 focus:ring-blue-500 focus:outline-none"
                 />
               </div>
             </div>
 
             <div>
-              <label className="block text-xs font-bold text-slate-300 mb-1.5">College Email</label>
+              <label className="block text-xs font-bold text-slate-300 mb-1.5">Official SVCE Email</label>
               <div className="relative">
                 <Mail className="w-4 h-4 text-slate-500 absolute left-3.5 top-3.5" />
                 <input
@@ -122,10 +134,11 @@ export default function RegisterPage() {
                   type="email"
                   value={email}
                   onChange={(e) => setEmail(e.target.value)}
-                  placeholder="alex.johnson@college.edu"
+                  placeholder="name@svce.ac.in"
                   className="w-full pl-10 pr-4 py-2.5 bg-slate-950 border border-slate-800 rounded-xl text-xs text-white placeholder-slate-500 focus:ring-2 focus:ring-blue-500 focus:outline-none"
                 />
               </div>
+              <span className="block text-[10px] text-slate-500 mt-1">Must end with @svce.ac.in</span>
             </div>
 
             <div>
@@ -177,7 +190,7 @@ export default function RegisterPage() {
               disabled={isLoading}
               className="w-full py-3 bg-blue-600 hover:bg-blue-500 disabled:opacity-50 text-white font-bold text-xs rounded-xl shadow-lg shadow-blue-600/20 transition-all flex items-center justify-center mt-2"
             >
-              {isLoading ? 'Creating Account...' : 'Complete Registration'}
+              {isLoading ? 'Registering...' : 'Submit Registration for Admin Approval'}
               <ArrowRight className="w-4 h-4 ml-1.5" />
             </button>
           </form>

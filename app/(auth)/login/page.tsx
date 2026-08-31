@@ -11,26 +11,36 @@ import {
   ArrowRight, 
   ShieldAlert, 
   BookOpen, 
-  UserCheck, 
+  Clock, 
   AlertCircle 
 } from 'lucide-react';
 
-export default function CentralizedLoginPage() {
+export default function LoginPage() {
   const router = useRouter();
   const { signInWithEmail, loginWithRole, isLoading } = useAuth();
 
   const [email, setEmail] = useState<string>('');
   const [password, setPassword] = useState<string>('');
   const [errorMsg, setErrorMsg] = useState<string | null>(null);
+  const [pendingVerification, setPendingVerification] = useState<boolean>(false);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setErrorMsg(null);
+    setPendingVerification(false);
 
     const res = await signInWithEmail(email, password);
+
+    if (res.pendingVerification) {
+      setPendingVerification(true);
+      setErrorMsg(res.error || 'Your account is pending verification by Placement Cell Admin.');
+      return;
+    }
+
     if (res.success) {
-      if (email.includes('faculty')) router.push('/faculty');
-      else if (email.includes('admin')) router.push('/admin');
+      const cleanEmail = email.toLowerCase().trim();
+      if (cleanEmail === 'placetrackpro@admin.co.in') router.push('/admin');
+      else if (cleanEmail.includes('faculty') || cleanEmail.includes('teacher')) router.push('/faculty');
       else router.push('/student');
     } else {
       setErrorMsg(res.error || 'Invalid credentials. Please check your email and password.');
@@ -59,7 +69,7 @@ export default function CentralizedLoginPage() {
 
         <h2 className="text-3xl font-black tracking-tight text-white">PlaceTrack Pro Portal Sign In</h2>
         <p className="mt-2 text-xs text-slate-400">
-          Sign in with your email or select a role persona to enter your isolated environment
+          Sign in with your official college credentials (@svce.ac.in or Admin login)
         </p>
       </div>
 
@@ -68,26 +78,29 @@ export default function CentralizedLoginPage() {
         {/* Quick Role Persona Sign In Buttons */}
         <div className="bg-slate-900/90 border border-slate-800 p-4 rounded-3xl space-y-2">
           <span className="block text-[11px] font-bold text-slate-400 uppercase tracking-wider text-center mb-2">
-            Instant 1-Click Role Persona Login
+            Instant Demo Sign In (1-Click)
           </span>
           <div className="grid grid-cols-3 gap-2">
             <button
+              type="button"
               onClick={() => handleQuickLogin('student')}
               className="p-2.5 bg-blue-600/20 hover:bg-blue-600/30 border border-blue-500/30 text-blue-300 font-bold text-xs rounded-xl transition-all flex flex-col items-center justify-center space-y-1"
             >
               <GraduationCap className="w-4 h-4 text-blue-400" />
-              <span>Student</span>
+              <span>Student (@svce)</span>
             </button>
             
             <button
+              type="button"
               onClick={() => handleQuickLogin('faculty')}
               className="p-2.5 bg-indigo-600/20 hover:bg-indigo-600/30 border border-indigo-500/30 text-indigo-300 font-bold text-xs rounded-xl transition-all flex flex-col items-center justify-center space-y-1"
             >
               <BookOpen className="w-4 h-4 text-indigo-400" />
-              <span>Faculty</span>
+              <span>Teacher (@svce)</span>
             </button>
 
             <button
+              type="button"
               onClick={() => handleQuickLogin('admin')}
               className="p-2.5 bg-amber-600/20 hover:bg-amber-600/30 border border-amber-500/30 text-amber-300 font-bold text-xs rounded-xl transition-all flex flex-col items-center justify-center space-y-1"
             >
@@ -101,8 +114,10 @@ export default function CentralizedLoginPage() {
         <div className="bg-slate-900 border border-slate-800 py-8 px-6 shadow-2xl sm:rounded-3xl sm:px-10">
           
           {errorMsg && (
-            <div className="mb-4 p-3 bg-red-500/10 border border-red-500/30 rounded-xl text-xs text-red-400 flex items-center space-x-2">
-              <AlertCircle className="w-4 h-4 shrink-0" />
+            <div className={`mb-4 p-3 rounded-xl text-xs flex items-start space-x-2 ${
+              pendingVerification ? 'bg-amber-500/10 border border-amber-500/30 text-amber-300' : 'bg-red-500/10 border border-red-500/30 text-red-400'
+            }`}>
+              {pendingVerification ? <Clock className="w-4 h-4 shrink-0 text-amber-400" /> : <AlertCircle className="w-4 h-4 shrink-0" />}
               <span>{errorMsg}</span>
             </div>
           )}
@@ -117,10 +132,11 @@ export default function CentralizedLoginPage() {
                   type="email"
                   value={email}
                   onChange={(e) => setEmail(e.target.value)}
-                  placeholder="student@college.edu"
+                  placeholder="student@svce.ac.in or placetrackpro@admin.co.in"
                   className="w-full pl-10 pr-4 py-2.5 bg-slate-950 border border-slate-800 rounded-xl text-xs text-white placeholder-slate-500 focus:ring-2 focus:ring-blue-500 focus:outline-none"
                 />
               </div>
+              <span className="block text-[10px] text-slate-500 mt-1">Must use @svce.ac.in for Student/Teacher or placetrackpro@admin.co.in for Admin</span>
             </div>
 
             <div>
@@ -152,7 +168,7 @@ export default function CentralizedLoginPage() {
             <p className="text-xs text-slate-400">
               Don&apos;t have an account yet?{' '}
               <Link href="/register" className="font-bold text-blue-400 hover:underline">
-                Register New Account
+                Register New SVCE Account
               </Link>
             </p>
           </div>

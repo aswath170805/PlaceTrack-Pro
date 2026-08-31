@@ -20,8 +20,6 @@ import {
   AuditLog
 } from '@/lib/mockData';
 
-// Direct Supabase Postgres Database Service
-
 export class DatabaseService {
   private static getSupabase() {
     return createClient();
@@ -52,7 +50,7 @@ export class DatabaseService {
     return newBatch;
   }
 
-  // PROFILES / USERS
+  // PROFILES / USERS / VERIFICATION DESK
   static async getProfiles(): Promise<Profile[]> {
     try {
       const supabase = this.getSupabase();
@@ -62,6 +60,30 @@ export class DatabaseService {
       console.warn('Supabase DB getProfiles error:', e);
     }
     return MOCK_PROFILES;
+  }
+
+  static async getPendingVerifications(): Promise<Profile[]> {
+    try {
+      const supabase = this.getSupabase();
+      const { data, error } = await supabase.from('profiles').select('*').eq('is_verified', false);
+      if (!error && data) return data as Profile[];
+    } catch (e) {
+      console.warn('Supabase DB getPendingVerifications error:', e);
+    }
+    return MOCK_PROFILES.filter((p) => !p.is_verified);
+  }
+
+  static async verifyUserAccess(userId: string, isVerified: boolean): Promise<void> {
+    try {
+      const supabase = this.getSupabase();
+      await supabase.from('profiles').update({ is_verified: isVerified }).eq('id', userId);
+    } catch (e) {
+      console.warn('Supabase DB verifyUserAccess error:', e);
+    }
+    const profile = MOCK_PROFILES.find((p) => p.id === userId);
+    if (profile) profile.is_verified = isVerified;
+
+    await this.logAdminAction(isVerified ? 'GRANT_USER_ACCESS' : 'REVOKE_USER_ACCESS', 'profiles', userId, { is_verified: isVerified });
   }
 
   static async updateProfileRole(userId: string, role: 'student' | 'faculty' | 'admin'): Promise<void> {
@@ -171,11 +193,11 @@ export class DatabaseService {
       title: testData.title || 'New Assessment',
       type: testData.type || 'weekly_assessment',
       batch_id: testData.batch_id,
-      batch_name: MOCK_BATCHES.find((b) => b.id === testData.batch_id)?.name || 'CS-2026 Batch A',
+      batch_name: MOCK_BATCHES.find((b) => b.id === testData.batch_id)?.name || 'CS-2026 Batch A (SVCE)',
       start_time: new Date().toISOString(),
       end_time: new Date(Date.now() + 86400000).toISOString(),
       duration_minutes: testData.duration_minutes || 60,
-      created_by: testData.created_by || 'Faculty Member',
+      created_by: testData.created_by || 'Dr. Sarah Connor',
       is_proctored: testData.is_proctored !== undefined ? testData.is_proctored : true,
       question_count: 5,
     };
@@ -333,7 +355,7 @@ export class DatabaseService {
     const newLog: AuditLog = {
       id: 'log-' + Math.random().toString(36).substring(2, 9),
       actor_id: 'a3333333-3333-3333-3333-333333333333',
-      actor_name: 'Placement Admin',
+      actor_name: 'System Admin',
       action,
       target_table: targetTable,
       target_id: targetId,
