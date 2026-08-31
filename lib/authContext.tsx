@@ -115,6 +115,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       created_at: new Date().toISOString(),
     };
 
+    await DatabaseService.createProfile(fallbackProfile);
     setUser(fallbackProfile);
     setRole(assignedRole);
     localStorage.setItem('placetrack_role', assignedRole);
@@ -143,7 +144,9 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       created_at: new Date().toISOString(),
     };
 
-    MOCK_PROFILES.unshift(newProfile);
+    // Save profile into DatabaseService so it appears live on Admin Verification Desk!
+    await DatabaseService.createProfile(newProfile);
+
     setIsLoading(false);
     return { 
       success: false, 

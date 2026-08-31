@@ -20,6 +20,9 @@ import {
   AuditLog
 } from '@/lib/mockData';
 
+// Shared persistent in-memory profiles store initialized with default seed profiles
+let PERSISTENT_PROFILES: Profile[] = [...MOCK_PROFILES];
+
 export class DatabaseService {
   private static getSupabase() {
     return createClient();
@@ -30,7 +33,7 @@ export class DatabaseService {
     try {
       const supabase = this.getSupabase();
       const { data, error } = await supabase.from('batches').select('*');
-      if (!error && data) return data as Batch[];
+      if (!error && data && data.length > 0) return data as Batch[];
     } catch (e) {
       console.warn('Supabase DB getBatches error:', e);
     }
@@ -50,27 +53,53 @@ export class DatabaseService {
     return newBatch;
   }
 
-  // PROFILES / USERS / VERIFICATION DESK
+  // PROFILES / USER REGISTRATIONS / VERIFICATION DESK
   static async getProfiles(): Promise<Profile[]> {
     try {
       const supabase = this.getSupabase();
       const { data, error } = await supabase.from('profiles').select('*');
-      if (!error && data) return data as Profile[];
+      if (!error && data && data.length > 0) {
+        // Merge Supabase profiles with local registered profiles
+        const mergedMap = new Map<string, Profile>();
+        [...data, ...PERSISTENT_PROFILES].forEach((p) => mergedMap.set(p.id, p));
+        return Array.from(mergedMap.values());
+      }
     } catch (e) {
       console.warn('Supabase DB getProfiles error:', e);
     }
-    return MOCK_PROFILES;
+    return PERSISTENT_PROFILES;
+  }
+
+  static async createProfile(profile: Profile): Promise<Profile> {
+    try {
+      const supabase = this.getSupabase();
+      const { data, error } = await supabase.from('profiles').insert([{
+        id: profile.id,
+        full_name: profile.full_name,
+        role: profile.role,
+        department: profile.department,
+        year_of_study: profile.year_of_study,
+        batch_id: profile.batch_id,
+        is_verified: profile.is_verified,
+      }]).select().single();
+
+      if (!error && data) {
+        const created = { ...profile, ...data };
+        PERSISTENT_PROFILES = [created, ...PERSISTENT_PROFILES.filter((p) => p.id !== created.id)];
+        return created;
+      }
+    } catch (e) {
+      console.warn('Supabase DB createProfile error:', e);
+    }
+
+    // Always store in persistent memory store
+    PERSISTENT_PROFILES = [profile, ...PERSISTENT_PROFILES.filter((p) => p.id !== profile.id)];
+    return profile;
   }
 
   static async getPendingVerifications(): Promise<Profile[]> {
-    try {
-      const supabase = this.getSupabase();
-      const { data, error } = await supabase.from('profiles').select('*').eq('is_verified', false);
-      if (!error && data) return data as Profile[];
-    } catch (e) {
-      console.warn('Supabase DB getPendingVerifications error:', e);
-    }
-    return MOCK_PROFILES.filter((p) => !p.is_verified);
+    const allProfiles = await this.getProfiles();
+    return allProfiles.filter((p) => !p.is_verified);
   }
 
   static async verifyUserAccess(userId: string, isVerified: boolean): Promise<void> {
@@ -80,8 +109,10 @@ export class DatabaseService {
     } catch (e) {
       console.warn('Supabase DB verifyUserAccess error:', e);
     }
-    const profile = MOCK_PROFILES.find((p) => p.id === userId);
-    if (profile) profile.is_verified = isVerified;
+
+    PERSISTENT_PROFILES = PERSISTENT_PROFILES.map((p) =>
+      p.id === userId ? { ...p, is_verified: isVerified } : p
+    );
 
     await this.logAdminAction(isVerified ? 'GRANT_USER_ACCESS' : 'REVOKE_USER_ACCESS', 'profiles', userId, { is_verified: isVerified });
   }
@@ -93,8 +124,10 @@ export class DatabaseService {
     } catch (e) {
       console.warn('Supabase DB updateProfileRole error:', e);
     }
-    const profile = MOCK_PROFILES.find((p) => p.id === userId);
-    if (profile) profile.role = role;
+
+    PERSISTENT_PROFILES = PERSISTENT_PROFILES.map((p) =>
+      p.id === userId ? { ...p, role } : p
+    );
   }
 
   // QUESTION BANKS & QUESTIONS
@@ -102,7 +135,7 @@ export class DatabaseService {
     try {
       const supabase = this.getSupabase();
       const { data, error } = await supabase.from('question_banks').select('*');
-      if (!error && data) return data as QuestionBank[];
+      if (!error && data && data.length > 0) return data as QuestionBank[];
     } catch (e) {
       console.warn('Supabase DB getQuestionBanks error:', e);
     }
@@ -128,7 +161,7 @@ export class DatabaseService {
       let query = supabase.from('questions').select('*');
       if (bankId) query = query.eq('bank_id', bankId);
       const { data, error } = await query;
-      if (!error && data) return data as Question[];
+      if (!error && data && data.length > 0) return data as Question[];
     } catch (e) {
       console.warn('Supabase DB getQuestions error:', e);
     }
@@ -167,7 +200,7 @@ export class DatabaseService {
     try {
       const supabase = this.getSupabase();
       const { data, error } = await supabase.from('tests').select('*');
-      if (!error && data) return data as Test[];
+      if (!error && data && data.length > 0) return data as Test[];
     } catch (e) {
       console.warn('Supabase DB getTests error:', e);
     }
@@ -211,7 +244,7 @@ export class DatabaseService {
       let query = supabase.from('test_attempts').select('*');
       if (studentId) query = query.eq('student_id', studentId);
       const { data, error } = await query;
-      if (!error && data) return data as TestAttempt[];
+      if (!error && data && data.length > 0) return data as TestAttempt[];
     } catch (e) {
       console.warn('Supabase DB getTestAttempts error:', e);
     }
@@ -255,7 +288,7 @@ export class DatabaseService {
       let query = supabase.from('proctoring_events').select('*');
       if (attemptId) query = query.eq('attempt_id', attemptId);
       const { data, error } = await query;
-      if (!error && data) return data as ProctoringEvent[];
+      if (!error && data && data.length > 0) return data as ProctoringEvent[];
     } catch (e) {
       console.warn('Supabase DB getProctoringEvents error:', e);
     }
@@ -296,7 +329,7 @@ export class DatabaseService {
       let query = supabase.from('attendance').select('*');
       if (studentId) query = query.eq('student_id', studentId);
       const { data, error } = await query;
-      if (!error && data) return data as AttendanceRecord[];
+      if (!error && data && data.length > 0) return data as AttendanceRecord[];
     } catch (e) {
       console.warn('Supabase DB getAttendanceRecords error:', e);
     }
@@ -338,7 +371,7 @@ export class DatabaseService {
     try {
       const supabase = this.getSupabase();
       const { data, error } = await supabase.from('audit_logs').select('*');
-      if (!error && data) return data as AuditLog[];
+      if (!error && data && data.length > 0) return data as AuditLog[];
     } catch (e) {
       console.warn('Supabase DB getAuditLogs error:', e);
     }
