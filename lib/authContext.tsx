@@ -16,8 +16,8 @@ interface AuthContextType {
 }
 
 const AuthContext = createContext<AuthContextType>({
-  user: MOCK_PROFILES[0],
-  role: 'student',
+  user: null,
+  role: null,
   isLoading: false,
   loginWithRole: () => {},
   signInWithEmail: async () => ({ success: false }),
@@ -27,8 +27,8 @@ const AuthContext = createContext<AuthContextType>({
 });
 
 export function AuthProvider({ children }: { children: React.ReactNode }) {
-  const [user, setUser] = useState<Profile | null>(MOCK_PROFILES[0]);
-  const [role, setRole] = useState<'student' | 'faculty' | 'admin' | null>('student');
+  const [user, setUser] = useState<Profile | null>(null);
+  const [role, setRole] = useState<'student' | 'faculty' | 'admin' | null>(null);
   const [isLoading, setIsLoading] = useState(false);
 
   useEffect(() => {
@@ -145,7 +145,19 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     };
 
     // Save profile into DatabaseService so it appears live on Admin Verification Desk!
-    await DatabaseService.createProfile(newProfile);
+    const created = await DatabaseService.createProfile(newProfile);
+    const targetUserId = created?.id || newProfile.id;
+
+    // Create verification request record in verification_requests table
+    await DatabaseService.createVerificationRequest({
+      user_id: targetUserId,
+      student_name: data.fullName,
+      email: cleanEmail,
+      role: data.role,
+      department: data.department,
+      year_of_study: data.yearOfStudy,
+      batch_id: data.batchId,
+    });
 
     setIsLoading(false);
     return { 

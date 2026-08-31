@@ -19,7 +19,6 @@ import {
 export default function AdminUserManagementPage() {
   const [users, setUsers] = useState<Profile[]>([]);
   const [pendingUsers, setPendingUsers] = useState<Profile[]>([]);
-  const [batches, setBatches] = useState<Batch[]>(MOCK_BATCHES);
   const [actionSuccess, setActionSuccess] = useState<string | null>(null);
   const [isRefreshing, setIsRefreshing] = useState<boolean>(false);
 
@@ -39,7 +38,13 @@ export default function AdminUserManagementPage() {
   }, []);
 
   const handleGrantAccess = async (userId: string, name: string) => {
-    await DatabaseService.verifyUserAccess(userId, true);
+    const requests = await DatabaseService.getVerificationRequests();
+    const req = requests.find((r) => r.user_id === userId && r.status === 'pending');
+    if (req) {
+      await DatabaseService.approveVerificationRequest(req.id, userId);
+    } else {
+      await DatabaseService.createProfile({ id: userId, full_name: name, is_verified: true });
+    }
     
     // Update local state live
     setPendingUsers((prev) => prev.filter((u) => u.id !== userId));
@@ -51,7 +56,11 @@ export default function AdminUserManagementPage() {
   };
 
   const handleRevokeAccess = async (userId: string, name: string) => {
-    await DatabaseService.verifyUserAccess(userId, false);
+    const requests = await DatabaseService.getVerificationRequests();
+    const req = requests.find((r) => r.user_id === userId && r.status === 'pending');
+    if (req) {
+      await DatabaseService.rejectVerificationRequest(req.id, userId);
+    }
     
     setUsers((prev) => prev.filter((u) => u.id !== userId));
     const allProfiles = await DatabaseService.getProfiles();

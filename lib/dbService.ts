@@ -1,27 +1,18 @@
 import { createClient } from '@/lib/supabase/client';
 import { 
-  MOCK_BATCHES, 
-  MOCK_PROFILES, 
-  MOCK_QUESTION_BANKS, 
-  MOCK_QUESTIONS, 
-  MOCK_TESTS, 
-  MOCK_TEST_ATTEMPTS, 
-  MOCK_PROCTORING_EVENTS, 
-  MOCK_ATTENDANCE, 
-  MOCK_AUDIT_LOGS,
   Batch,
   Profile,
+  VerificationRequest,
   QuestionBank,
   Question,
   Test,
   TestAttempt,
   ProctoringEvent,
   AttendanceRecord,
-  AuditLog
+  AuditLog,
+  Announcement,
+  PlacementDrive
 } from '@/lib/mockData';
-
-// Shared persistent in-memory profiles store initialized with default seed profiles
-let PERSISTENT_PROFILES: Profile[] = [...MOCK_PROFILES];
 
 export class DatabaseService {
   private static getSupabase() {
@@ -32,143 +23,180 @@ export class DatabaseService {
   static async getBatches(): Promise<Batch[]> {
     try {
       const supabase = this.getSupabase();
-      const { data, error } = await supabase.from('batches').select('*');
-      if (!error && data && data.length > 0) return data as Batch[];
+      const { data, error } = await supabase.from('batches').select('*').order('created_at', { ascending: false });
+      if (!error && data) return data as Batch[];
     } catch (e) {
-      console.warn('Supabase DB getBatches error:', e);
+      console.warn('Supabase getBatches error:', e);
     }
-    return MOCK_BATCHES;
+    return [];
   }
 
-  static async createBatch(name: string, createdBy?: string): Promise<Batch> {
+  static async createBatch(name: string, createdBy?: string, department?: string): Promise<Batch | null> {
     try {
       const supabase = this.getSupabase();
-      const { data, error } = await supabase.from('batches').insert([{ name, created_by: createdBy }]).select().single();
+      const { data, error } = await supabase.from('batches').insert([{
+        name,
+        created_by: createdBy,
+        department: department || 'Computer Science'
+      }]).select().single();
       if (!error && data) return data as Batch;
     } catch (e) {
-      console.warn('Supabase DB createBatch error:', e);
+      console.warn('Supabase createBatch error:', e);
     }
-    const newBatch: Batch = { id: 'b-' + Math.random().toString(36).substring(2, 9), name, created_by: createdBy, student_count: 0 };
-    MOCK_BATCHES.push(newBatch);
-    return newBatch;
+    return null;
   }
 
-  // PROFILES / USER REGISTRATIONS / VERIFICATION DESK
+  // PROFILES & VERIFICATION
   static async getProfiles(): Promise<Profile[]> {
     try {
       const supabase = this.getSupabase();
-      const { data, error } = await supabase.from('profiles').select('*');
-      if (!error && data && data.length > 0) {
-        // Merge Supabase profiles with local registered profiles
-        const mergedMap = new Map<string, Profile>();
-        [...data, ...PERSISTENT_PROFILES].forEach((p) => mergedMap.set(p.id, p));
-        return Array.from(mergedMap.values());
-      }
+      const { data, error } = await supabase.from('profiles').select('*').order('created_at', { ascending: false });
+      if (!error && data) return data as Profile[];
     } catch (e) {
-      console.warn('Supabase DB getProfiles error:', e);
+      console.warn('Supabase getProfiles error:', e);
     }
-    return PERSISTENT_PROFILES;
+    return [];
   }
 
-  static async createProfile(profile: Profile): Promise<Profile> {
+  static async createProfile(profile: Partial<Profile>): Promise<Profile | null> {
     try {
       const supabase = this.getSupabase();
       const { data, error } = await supabase.from('profiles').insert([{
-        id: profile.id,
+        id: profile.id || undefined,
+        email: profile.email,
         full_name: profile.full_name,
         role: profile.role,
-        department: profile.department,
-        year_of_study: profile.year_of_study,
+        department: profile.department || 'Computer Science',
+        year_of_study: profile.year_of_study || 'Final Year',
         batch_id: profile.batch_id,
-        is_verified: profile.is_verified,
+        is_verified: profile.is_verified ?? false,
       }]).select().single();
 
-      if (!error && data) {
-        const created = { ...profile, ...data };
-        PERSISTENT_PROFILES = [created, ...PERSISTENT_PROFILES.filter((p) => p.id !== created.id)];
-        return created;
-      }
+      if (!error && data) return data as Profile;
     } catch (e) {
-      console.warn('Supabase DB createProfile error:', e);
+      console.warn('Supabase createProfile error:', e);
     }
-
-    // Always store in persistent memory store
-    PERSISTENT_PROFILES = [profile, ...PERSISTENT_PROFILES.filter((p) => p.id !== profile.id)];
-    return profile;
-  }
-
-  static async getPendingVerifications(): Promise<Profile[]> {
-    const allProfiles = await this.getProfiles();
-    return allProfiles.filter((p) => !p.is_verified);
-  }
-
-  static async verifyUserAccess(userId: string, isVerified: boolean): Promise<void> {
-    try {
-      const supabase = this.getSupabase();
-      await supabase.from('profiles').update({ is_verified: isVerified }).eq('id', userId);
-    } catch (e) {
-      console.warn('Supabase DB verifyUserAccess error:', e);
-    }
-
-    PERSISTENT_PROFILES = PERSISTENT_PROFILES.map((p) =>
-      p.id === userId ? { ...p, is_verified: isVerified } : p
-    );
-
-    await this.logAdminAction(isVerified ? 'GRANT_USER_ACCESS' : 'REVOKE_USER_ACCESS', 'profiles', userId, { is_verified: isVerified });
+    return null;
   }
 
   static async updateProfileRole(userId: string, role: 'student' | 'faculty' | 'admin'): Promise<void> {
     try {
       const supabase = this.getSupabase();
       await supabase.from('profiles').update({ role }).eq('id', userId);
+      await this.logAdminAction('UPDATE_USER_ROLE', 'profiles', userId, { new_role: role });
     } catch (e) {
-      console.warn('Supabase DB updateProfileRole error:', e);
+      console.warn('Supabase updateProfileRole error:', e);
     }
+  }
 
-    PERSISTENT_PROFILES = PERSISTENT_PROFILES.map((p) =>
-      p.id === userId ? { ...p, role } : p
-    );
+  // VERIFICATION REQUESTS (Admin Verification Desk)
+  static async getVerificationRequests(): Promise<VerificationRequest[]> {
+    try {
+      const supabase = this.getSupabase();
+      const { data, error } = await supabase.from('verification_requests').select('*').order('submitted_at', { ascending: false });
+      if (!error && data) return data as VerificationRequest[];
+    } catch (e) {
+      console.warn('Supabase getVerificationRequests error:', e);
+    }
+    return [];
+  }
+
+  static async createVerificationRequest(reqData: Partial<VerificationRequest>): Promise<VerificationRequest | null> {
+    try {
+      const supabase = this.getSupabase();
+      const { data, error } = await supabase.from('verification_requests').insert([{
+        user_id: reqData.user_id,
+        student_name: reqData.student_name,
+        email: reqData.email,
+        role: reqData.role,
+        department: reqData.department,
+        year_of_study: reqData.year_of_study,
+        batch_id: reqData.batch_id,
+        status: 'pending',
+      }]).select().single();
+
+      if (!error && data) return data as VerificationRequest;
+    } catch (e) {
+      console.warn('Supabase createVerificationRequest error:', e);
+    }
+    return null;
+  }
+
+  static async approveVerificationRequest(requestId: string, userId: string, reviewerId?: string): Promise<void> {
+    try {
+      const supabase = this.getSupabase();
+      await supabase.from('verification_requests').update({
+        status: 'approved',
+        reviewed_at: new Date().toISOString(),
+        reviewed_by: reviewerId
+      }).eq('id', requestId);
+
+      await supabase.from('profiles').update({ is_verified: true }).eq('id', userId);
+      await this.logAdminAction('APPROVE_USER_VERIFICATION', 'verification_requests', requestId, { user_id: userId });
+    } catch (e) {
+      console.warn('Supabase approveVerificationRequest error:', e);
+    }
+  }
+
+  static async rejectVerificationRequest(requestId: string, userId: string, reason?: string, reviewerId?: string): Promise<void> {
+    try {
+      const supabase = this.getSupabase();
+      await supabase.from('verification_requests').update({
+        status: 'rejected',
+        rejection_reason: reason || 'Access request rejected by Placement Admin.',
+        reviewed_at: new Date().toISOString(),
+        reviewed_by: reviewerId
+      }).eq('id', requestId);
+
+      await supabase.from('profiles').update({ is_verified: false }).eq('id', userId);
+      await this.logAdminAction('REJECT_USER_VERIFICATION', 'verification_requests', requestId, { user_id: userId, reason });
+    } catch (e) {
+      console.warn('Supabase rejectVerificationRequest error:', e);
+    }
   }
 
   // QUESTION BANKS & QUESTIONS
   static async getQuestionBanks(): Promise<QuestionBank[]> {
     try {
       const supabase = this.getSupabase();
-      const { data, error } = await supabase.from('question_banks').select('*');
-      if (!error && data && data.length > 0) return data as QuestionBank[];
+      const { data, error } = await supabase.from('question_banks').select('*').order('created_at', { ascending: false });
+      if (!error && data) return data as QuestionBank[];
     } catch (e) {
-      console.warn('Supabase DB getQuestionBanks error:', e);
+      console.warn('Supabase getQuestionBanks error:', e);
     }
-    return MOCK_QUESTION_BANKS;
+    return [];
   }
 
-  static async createQuestionBank(title: string, topic: string, createdBy: string): Promise<QuestionBank> {
+  static async createQuestionBank(title: string, topic: string, createdBy: string, description?: string): Promise<QuestionBank | null> {
     try {
       const supabase = this.getSupabase();
-      const { data, error } = await supabase.from('question_banks').insert([{ title, topic, created_by: createdBy }]).select().single();
+      const { data, error } = await supabase.from('question_banks').insert([{
+        title,
+        topic,
+        created_by: createdBy,
+        description
+      }]).select().single();
       if (!error && data) return data as QuestionBank;
     } catch (e) {
-      console.warn('Supabase DB createQuestionBank error:', e);
+      console.warn('Supabase createQuestionBank error:', e);
     }
-    const newBank: QuestionBank = { id: 'qb-' + Math.random().toString(36).substring(2, 9), title, topic, question_count: 0, created_by: createdBy };
-    MOCK_QUESTION_BANKS.push(newBank);
-    return newBank;
+    return null;
   }
 
   static async getQuestions(bankId?: string): Promise<Question[]> {
     try {
       const supabase = this.getSupabase();
-      let query = supabase.from('questions').select('*');
+      let query = supabase.from('questions').select('*').order('created_at', { ascending: false });
       if (bankId) query = query.eq('bank_id', bankId);
       const { data, error } = await query;
-      if (!error && data && data.length > 0) return data as Question[];
+      if (!error && data) return data as Question[];
     } catch (e) {
-      console.warn('Supabase DB getQuestions error:', e);
+      console.warn('Supabase getQuestions error:', e);
     }
-    return bankId ? MOCK_QUESTIONS.filter((q) => q.bank_id === bankId) : MOCK_QUESTIONS;
+    return [];
   }
 
-  static async createQuestion(question: Partial<Question>): Promise<Question> {
+  static async createQuestion(question: Partial<Question>): Promise<Question | null> {
     try {
       const supabase = this.getSupabase();
       const { data, error } = await supabase.from('questions').insert([{
@@ -177,37 +205,28 @@ export class DatabaseService {
         topic: question.topic,
         difficulty: question.difficulty,
         content: question.content,
+        marks: question.marks || 1,
       }]).select().single();
       if (!error && data) return data as Question;
     } catch (e) {
-      console.warn('Supabase DB createQuestion error:', e);
+      console.warn('Supabase createQuestion error:', e);
     }
-    const newQ: Question = {
-      id: 'q-' + Math.random().toString(36).substring(2, 9),
-      bank_id: question.bank_id || MOCK_QUESTION_BANKS[0].id,
-      type: question.type || 'mcq',
-      topic: question.topic || 'General',
-      difficulty: question.difficulty || 'medium',
-      content: question.content || { questionText: 'Sample Question' },
-      created_at: new Date().toISOString(),
-    };
-    MOCK_QUESTIONS.unshift(newQ);
-    return newQ;
+    return null;
   }
 
   // TESTS & TEST ATTEMPTS
   static async getTests(): Promise<Test[]> {
     try {
       const supabase = this.getSupabase();
-      const { data, error } = await supabase.from('tests').select('*');
-      if (!error && data && data.length > 0) return data as Test[];
+      const { data, error } = await supabase.from('tests').select('*').order('created_at', { ascending: false });
+      if (!error && data) return data as Test[];
     } catch (e) {
-      console.warn('Supabase DB getTests error:', e);
+      console.warn('Supabase getTests error:', e);
     }
-    return MOCK_TESTS;
+    return [];
   }
 
-  static async createTest(testData: Partial<Test>): Promise<Test> {
+  static async createTest(testData: Partial<Test>): Promise<Test | null> {
     try {
       const supabase = this.getSupabase();
       const { data, error } = await supabase.from('tests').insert([{
@@ -216,42 +235,29 @@ export class DatabaseService {
         batch_id: testData.batch_id,
         duration_minutes: testData.duration_minutes,
         is_proctored: testData.is_proctored,
+        instructions: testData.instructions,
       }]).select().single();
       if (!error && data) return data as Test;
     } catch (e) {
-      console.warn('Supabase DB createTest error:', e);
+      console.warn('Supabase createTest error:', e);
     }
-    const newTest: Test = {
-      id: 't-' + Math.random().toString(36).substring(2, 9),
-      title: testData.title || 'New Assessment',
-      type: testData.type || 'weekly_assessment',
-      batch_id: testData.batch_id,
-      batch_name: MOCK_BATCHES.find((b) => b.id === testData.batch_id)?.name || 'CS-2026 Batch A (SVCE)',
-      start_time: new Date().toISOString(),
-      end_time: new Date(Date.now() + 86400000).toISOString(),
-      duration_minutes: testData.duration_minutes || 60,
-      created_by: testData.created_by || 'Dr. Sarah Connor',
-      is_proctored: testData.is_proctored !== undefined ? testData.is_proctored : true,
-      question_count: 5,
-    };
-    MOCK_TESTS.unshift(newTest);
-    return newTest;
+    return null;
   }
 
   static async getTestAttempts(studentId?: string): Promise<TestAttempt[]> {
     try {
       const supabase = this.getSupabase();
-      let query = supabase.from('test_attempts').select('*');
+      let query = supabase.from('test_attempts').select('*').order('started_at', { ascending: false });
       if (studentId) query = query.eq('student_id', studentId);
       const { data, error } = await query;
-      if (!error && data && data.length > 0) return data as TestAttempt[];
+      if (!error && data) return data as TestAttempt[];
     } catch (e) {
-      console.warn('Supabase DB getTestAttempts error:', e);
+      console.warn('Supabase getTestAttempts error:', e);
     }
-    return studentId ? MOCK_TEST_ATTEMPTS.filter((a) => a.student_id === studentId) : MOCK_TEST_ATTEMPTS;
+    return [];
   }
 
-  static async submitTestAttempt(attemptData: Partial<TestAttempt>): Promise<TestAttempt> {
+  static async submitTestAttempt(attemptData: Partial<TestAttempt>): Promise<TestAttempt | null> {
     try {
       const supabase = this.getSupabase();
       const { data, error } = await supabase.from('test_attempts').insert([{
@@ -259,43 +265,30 @@ export class DatabaseService {
         student_id: attemptData.student_id,
         score: attemptData.score,
         status: 'submitted',
+        submitted_at: new Date().toISOString(),
       }]).select().single();
       if (!error && data) return data as TestAttempt;
     } catch (e) {
-      console.warn('Supabase DB submitTestAttempt error:', e);
+      console.warn('Supabase submitTestAttempt error:', e);
     }
-    const newAttempt: TestAttempt = {
-      id: attemptData.id || 'att-' + Math.random().toString(36).substring(2, 9),
-      test_id: attemptData.test_id || 't-101',
-      test_title: attemptData.test_title || 'Daily Practice Set',
-      student_id: attemptData.student_id || 's1111111-1111-1111-1111-111111111111',
-      student_name: attemptData.student_name || 'Alex Johnson',
-      started_at: attemptData.started_at || new Date().toISOString(),
-      submitted_at: new Date().toISOString(),
-      score: attemptData.score !== undefined ? attemptData.score : 85,
-      max_score: 100,
-      status: 'submitted',
-      flag_count: attemptData.flag_count || 0,
-    };
-    MOCK_TEST_ATTEMPTS.unshift(newAttempt);
-    return newAttempt;
+    return null;
   }
 
   // PROCTORING EVENTS
   static async getProctoringEvents(attemptId?: string): Promise<ProctoringEvent[]> {
     try {
       const supabase = this.getSupabase();
-      let query = supabase.from('proctoring_events').select('*');
+      let query = supabase.from('proctoring_events').select('*').order('created_at', { ascending: false });
       if (attemptId) query = query.eq('attempt_id', attemptId);
       const { data, error } = await query;
-      if (!error && data && data.length > 0) return data as ProctoringEvent[];
+      if (!error && data) return data as ProctoringEvent[];
     } catch (e) {
-      console.warn('Supabase DB getProctoringEvents error:', e);
+      console.warn('Supabase getProctoringEvents error:', e);
     }
-    return attemptId ? MOCK_PROCTORING_EVENTS.filter((e) => e.attempt_id === attemptId) : MOCK_PROCTORING_EVENTS;
+    return [];
   }
 
-  static async logProctoringEvent(eventData: Partial<ProctoringEvent>): Promise<ProctoringEvent> {
+  static async logProctoringEvent(eventData: Partial<ProctoringEvent>): Promise<ProctoringEvent | null> {
     try {
       const supabase = this.getSupabase();
       const { data, error } = await supabase.from('proctoring_events').insert([{
@@ -303,37 +296,27 @@ export class DatabaseService {
         event_type: eventData.event_type,
         severity: eventData.severity,
         snapshot_url: eventData.snapshot_url,
+        details: eventData.details,
       }]).select().single();
       if (!error && data) return data as ProctoringEvent;
     } catch (e) {
-      console.warn('Supabase DB logProctoringEvent error:', e);
+      console.warn('Supabase logProctoringEvent error:', e);
     }
-    const newEvent: ProctoringEvent = {
-      id: eventData.id || 'pe-' + Math.random().toString(36).substring(2, 9),
-      attempt_id: eventData.attempt_id || 'att-2',
-      student_name: eventData.student_name || 'Alex Johnson',
-      test_title: eventData.test_title || 'Weekly Proctored Assessment',
-      event_type: eventData.event_type || 'tab_switch',
-      severity: eventData.severity || 'medium',
-      snapshot_url: eventData.snapshot_url || 'https://images.unsplash.com/photo-1516321318423-f06f85e504b3?w=400&auto=format&fit=crop&q=60',
-      created_at: new Date().toISOString(),
-    };
-    MOCK_PROCTORING_EVENTS.unshift(newEvent);
-    return newEvent;
+    return null;
   }
 
   // ATTENDANCE
   static async getAttendanceRecords(studentId?: string): Promise<AttendanceRecord[]> {
     try {
       const supabase = this.getSupabase();
-      let query = supabase.from('attendance').select('*');
+      let query = supabase.from('attendance').select('*').order('created_at', { ascending: false });
       if (studentId) query = query.eq('student_id', studentId);
       const { data, error } = await query;
-      if (!error && data && data.length > 0) return data as AttendanceRecord[];
+      if (!error && data) return data as AttendanceRecord[];
     } catch (e) {
-      console.warn('Supabase DB getAttendanceRecords error:', e);
+      console.warn('Supabase getAttendanceRecords error:', e);
     }
-    return studentId ? MOCK_ATTENDANCE.filter((a) => a.student_id === studentId) : MOCK_ATTENDANCE;
+    return [];
   }
 
   static async submitAbsenceReason(recordId: string, reason: string): Promise<void> {
@@ -341,12 +324,7 @@ export class DatabaseService {
       const supabase = this.getSupabase();
       await supabase.from('attendance').update({ absence_reason: reason, reviewed_by_faculty: false }).eq('id', recordId);
     } catch (e) {
-      console.warn('Supabase DB submitAbsenceReason error:', e);
-    }
-    const rec = MOCK_ATTENDANCE.find((a) => a.id === recordId);
-    if (rec) {
-      rec.absence_reason = reason;
-      rec.reviewed_by_faculty = false;
+      console.warn('Supabase submitAbsenceReason error:', e);
     }
   }
 
@@ -357,12 +335,7 @@ export class DatabaseService {
       if (statusOverride) updates.status = statusOverride;
       await supabase.from('attendance').update(updates).eq('id', recordId);
     } catch (e) {
-      console.warn('Supabase DB reviewAttendance error:', e);
-    }
-    const rec = MOCK_ATTENDANCE.find((a) => a.id === recordId);
-    if (rec) {
-      rec.reviewed_by_faculty = true;
-      if (statusOverride) rec.status = statusOverride;
+      console.warn('Supabase reviewAttendance error:', e);
     }
   }
 
@@ -370,12 +343,12 @@ export class DatabaseService {
   static async getAuditLogs(): Promise<AuditLog[]> {
     try {
       const supabase = this.getSupabase();
-      const { data, error } = await supabase.from('audit_logs').select('*');
-      if (!error && data && data.length > 0) return data as AuditLog[];
+      const { data, error } = await supabase.from('audit_logs').select('*').order('created_at', { ascending: false });
+      if (!error && data) return data as AuditLog[];
     } catch (e) {
-      console.warn('Supabase DB getAuditLogs error:', e);
+      console.warn('Supabase getAuditLogs error:', e);
     }
-    return MOCK_AUDIT_LOGS;
+    return [];
   }
 
   static async logAdminAction(action: string, targetTable: string, targetId?: string, metadata?: any): Promise<void> {
@@ -383,18 +356,66 @@ export class DatabaseService {
       const supabase = this.getSupabase();
       await supabase.from('audit_logs').insert([{ action, target_table: targetTable, target_id: targetId, metadata }]);
     } catch (e) {
-      console.warn('Supabase DB logAdminAction error:', e);
+      console.warn('Supabase logAdminAction error:', e);
     }
-    const newLog: AuditLog = {
-      id: 'log-' + Math.random().toString(36).substring(2, 9),
-      actor_id: 'a3333333-3333-3333-3333-333333333333',
-      actor_name: 'System Admin',
-      action,
-      target_table: targetTable,
-      target_id: targetId,
-      metadata,
-      created_at: new Date().toISOString(),
-    };
-    MOCK_AUDIT_LOGS.unshift(newLog);
+  }
+
+  // ANNOUNCEMENTS
+  static async getAnnouncements(): Promise<Announcement[]> {
+    try {
+      const supabase = this.getSupabase();
+      const { data, error } = await supabase.from('announcements').select('*').order('created_at', { ascending: false });
+      if (!error && data) return data as Announcement[];
+    } catch (e) {
+      console.warn('Supabase getAnnouncements error:', e);
+    }
+    return [];
+  }
+
+  static async createAnnouncement(announcement: Partial<Announcement>): Promise<Announcement | null> {
+    try {
+      const supabase = this.getSupabase();
+      const { data, error } = await supabase.from('announcements').insert([{
+        title: announcement.title,
+        content: announcement.content,
+        priority: announcement.priority || 'medium',
+        target_batch_id: announcement.target_batch_id,
+      }]).select().single();
+      if (!error && data) return data as Announcement;
+    } catch (e) {
+      console.warn('Supabase createAnnouncement error:', e);
+    }
+    return null;
+  }
+
+  // PLACEMENT DRIVES
+  static async getPlacementDrives(): Promise<PlacementDrive[]> {
+    try {
+      const supabase = this.getSupabase();
+      const { data, error } = await supabase.from('placement_drives').select('*').order('created_at', { ascending: false });
+      if (!error && data) return data as PlacementDrive[];
+    } catch (e) {
+      console.warn('Supabase getPlacementDrives error:', e);
+    }
+    return [];
+  }
+
+  static async createPlacementDrive(drive: Partial<PlacementDrive>): Promise<PlacementDrive | null> {
+    try {
+      const supabase = this.getSupabase();
+      const { data, error } = await supabase.from('placement_drives').insert([{
+        company_name: drive.company_name,
+        role_title: drive.role_title,
+        package_lpa: drive.package_lpa,
+        eligible_departments: drive.eligible_departments,
+        drive_date: drive.drive_date,
+        status: drive.status || 'upcoming',
+      }]).select().single();
+      if (!error && data) return data as PlacementDrive;
+    } catch (e) {
+      console.warn('Supabase createPlacementDrive error:', e);
+    }
+    return null;
   }
 }
+

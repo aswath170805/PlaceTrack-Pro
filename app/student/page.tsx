@@ -4,7 +4,7 @@ import React, { useEffect, useState } from 'react';
 import Link from 'next/link';
 import { useAuth } from '@/lib/authContext';
 import { DatabaseService } from '@/lib/dbService';
-import { Test, TestAttempt, TestAttempt as AttemptType } from '@/lib/mockData';
+import { Test, TestAttempt, Announcement, PlacementDrive } from '@/lib/mockData';
 import { 
   Play, 
   Clock, 
@@ -12,22 +12,35 @@ import {
   ShieldAlert, 
   ArrowRight, 
   Sparkles, 
-  BrainCircuit 
+  BrainCircuit,
+  Megaphone,
+  Briefcase,
+  Building2,
+  Calendar,
+  IndianRupee
 } from 'lucide-react';
 
 export default function StudentDashboard() {
   const { user } = useAuth();
 
   const [tests, setTests] = useState<Test[]>([]);
-  const [attempts, setAttempts] = useState<AttemptType[]>([]);
+  const [attempts, setAttempts] = useState<TestAttempt[]>([]);
+  const [announcements, setAnnouncements] = useState<Announcement[]>([]);
+  const [drives, setDrives] = useState<PlacementDrive[]>([]);
   const [loading, setLoading] = useState<boolean>(true);
 
   useEffect(() => {
     async function loadStudentData() {
-      const allTests = await DatabaseService.getTests();
-      const allAttempts = await DatabaseService.getTestAttempts(user?.id);
+      const [allTests, allAttempts, allAnnouncements, allDrives] = await Promise.all([
+        DatabaseService.getTests(),
+        DatabaseService.getTestAttempts(user?.id),
+        DatabaseService.getAnnouncements(),
+        DatabaseService.getPlacementDrives()
+      ]);
       setTests(allTests);
       setAttempts(allAttempts);
+      setAnnouncements(allAnnouncements);
+      setDrives(allDrives);
       setLoading(false);
     }
     loadStudentData();

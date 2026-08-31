@@ -29,6 +29,17 @@ export default function CentralizedLoginPage() {
   const [errorMsg, setErrorMsg] = useState<string | null>(null);
   const [pendingVerification, setPendingVerification] = useState<boolean>(false);
 
+  const { user, role } = useAuth();
+
+  // Redirect if already logged in
+  useEffect(() => {
+    if (user && role) {
+      if (role === 'admin') router.push('/admin');
+      else if (role === 'faculty') router.push('/faculty');
+      else if (role === 'student') router.push('/student');
+    }
+  }, [user, role, router]);
+
   // Keyboard shortcut listener for Shift + Ctrl + F
   useEffect(() => {
     const handleKeyDown = (e: KeyboardEvent) => {

@@ -1,10 +1,11 @@
 'use client';
 
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import { useAuth } from '@/lib/authContext';
-import { MOCK_BATCHES } from '@/lib/mockData';
+import { DatabaseService } from '@/lib/dbService';
+import { Batch } from '@/lib/mockData';
 import { GraduationCap, Lock, Mail, User, BookOpen, ArrowRight, AlertCircle, Clock } from 'lucide-react';
 
 export default function RegisterPage() {
@@ -17,9 +18,19 @@ export default function RegisterPage() {
   const [role, setRole] = useState<'student' | 'faculty'>('student');
   const [department, setDepartment] = useState<string>('Computer Science');
   const [yearOfStudy, setYearOfStudy] = useState<string>('Final Year');
-  const [batchId, setBatchId] = useState<string>(MOCK_BATCHES[0].id);
+  const [batchId, setBatchId] = useState<string>('');
+  const [batches, setBatches] = useState<Batch[]>([]);
   const [errorMsg, setErrorMsg] = useState<string | null>(null);
   const [pendingNotice, setPendingNotice] = useState<boolean>(false);
+
+  useEffect(() => {
+    async function loadBatches() {
+      const bList = await DatabaseService.getBatches();
+      setBatches(bList);
+      if (bList.length > 0) setBatchId(bList[0].id);
+    }
+    loadBatches();
+  }, []);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
