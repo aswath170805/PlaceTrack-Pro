@@ -13,7 +13,7 @@ import {
   CheckCircle2, 
   GraduationCap, 
   BookOpen, 
-  Sparkles 
+  RefreshCw 
 } from 'lucide-react';
 
 export default function AdminUserManagementPage() {
@@ -21,27 +21,32 @@ export default function AdminUserManagementPage() {
   const [pendingUsers, setPendingUsers] = useState<Profile[]>([]);
   const [batches, setBatches] = useState<Batch[]>(MOCK_BATCHES);
   const [actionSuccess, setActionSuccess] = useState<string | null>(null);
+  const [isRefreshing, setIsRefreshing] = useState<boolean>(false);
 
+  // Live Real-Time Database Sync Polling for Pending Verifications
   useEffect(() => {
-    async function loadUserData() {
+    async function syncUserData() {
+      setIsRefreshing(true);
       const allProfiles = await DatabaseService.getProfiles();
       setUsers(allProfiles.filter((p) => p.is_verified));
       setPendingUsers(allProfiles.filter((p) => !p.is_verified));
+      setIsRefreshing(false);
     }
-    loadUserData();
+
+    syncUserData();
+    const syncInterval = setInterval(syncUserData, 3000);
+    return () => clearInterval(syncInterval);
   }, []);
 
   const handleGrantAccess = async (userId: string, name: string) => {
     await DatabaseService.verifyUserAccess(userId, true);
     
-    // Update local state
-    const target = pendingUsers.find((u) => u.id === userId);
-    if (target) {
-      setPendingUsers((prev) => prev.filter((u) => u.id !== userId));
-      setUsers((prev) => [{ ...target, is_verified: true }, ...prev]);
-    }
-    
-    setActionSuccess(`Access Granted to ${name}! Account is now verified.`);
+    // Update local state live
+    setPendingUsers((prev) => prev.filter((u) => u.id !== userId));
+    const allProfiles = await DatabaseService.getProfiles();
+    setUsers(allProfiles.filter((p) => p.is_verified));
+
+    setActionSuccess(`Access Granted to ${name}! Account is now verified in database.`);
     setTimeout(() => setActionSuccess(null), 4000);
   };
 
@@ -49,10 +54,8 @@ export default function AdminUserManagementPage() {
     await DatabaseService.verifyUserAccess(userId, false);
     
     setUsers((prev) => prev.filter((u) => u.id !== userId));
-    const target = users.find((u) => u.id === userId);
-    if (target) {
-      setPendingUsers((prev) => [{ ...target, is_verified: false }, ...prev]);
-    }
+    const allProfiles = await DatabaseService.getProfiles();
+    setPendingUsers(allProfiles.filter((p) => !p.is_verified));
 
     setActionSuccess(`Access Revoked for ${name}.`);
     setTimeout(() => setActionSuccess(null), 4000);
@@ -66,7 +69,7 @@ export default function AdminUserManagementPage() {
   };
 
   return (
-    <div className="min-h-screen bg-slate-50 py-10 px-4 sm:px-6 lg:px-8">
+    <div className="min-h-screen bg-slate-50 py-10 px-4 sm:px-6 lg:px-8 font-sans">
       <div className="max-w-7xl mx-auto space-y-8">
         
         {/* Header */}
@@ -77,7 +80,12 @@ export default function AdminUserManagementPage() {
               <span>Identity & Account Verification Desk</span>
             </div>
             <h1 className="text-2xl font-black text-slate-900">User Governance & Access Control Desk</h1>
-            <p className="text-xs text-slate-500">Verify new student & teacher registrations (@svce.ac.in) and manage system permissions</p>
+            <p className="text-xs text-slate-500">Live sync: Verify new student & teacher registrations (@svce.ac.in) and manage system permissions</p>
+          </div>
+
+          <div className="flex items-center space-x-2 bg-white px-3 py-1.5 rounded-xl border border-slate-200 shadow-xs text-xs text-slate-500 font-mono">
+            <RefreshCw className={`w-3.5 h-3.5 text-blue-600 ${isRefreshing ? 'animate-spin' : ''}`} />
+            <span>Live DB Sync Active</span>
           </div>
         </div>
 
@@ -89,15 +97,15 @@ export default function AdminUserManagementPage() {
           </div>
         )}
 
-        {/* 1. Pending Verification Requests Desk */}
+        {/* 1. Real-Time Pending Verification Requests Desk */}
         <div className="bg-white rounded-3xl border border-amber-200 shadow-md overflow-hidden">
           <div className="p-6 bg-amber-50/50 border-b border-amber-100 flex justify-between items-center">
             <div className="flex items-center space-x-2">
               <Clock className="w-5 h-5 text-amber-600" />
-              <h3 className="text-base font-extrabold text-slate-900">Pending Account Verification Requests</h3>
+              <h3 className="text-base font-extrabold text-slate-900">Real-Time Pending Account Verification Requests</h3>
             </div>
             <span className="px-3 py-1 bg-amber-200 text-amber-900 text-xs font-black rounded-full">
-              {pendingUsers.length} Pending
+              {pendingUsers.length} Pending Approval
             </span>
           </div>
 
@@ -151,7 +159,7 @@ export default function AdminUserManagementPage() {
         <div className="bg-white rounded-3xl border border-slate-200 shadow-sm overflow-hidden">
           <div className="p-6 border-b border-slate-100 flex justify-between items-center">
             <h3 className="text-base font-bold text-slate-900">Verified Active Accounts Directory</h3>
-            <span className="text-xs font-semibold text-slate-500">Active Accounts: {users.length}</span>
+            <span className="text-xs font-semibold text-slate-500">Active Verified Accounts: {users.length}</span>
           </div>
 
           <div className="overflow-x-auto">
