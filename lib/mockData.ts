@@ -45,8 +45,11 @@ export interface QuestionBank {
   topic: string;
   description?: string;
   department?: string;
+<<<<<<< HEAD
   target_department?: string;
   target_year?: string;
+=======
+>>>>>>> 405336aebf096f4e6de80aca2cdfa7d960f35ea4
   question_count?: number;
   created_by: string;
   created_at?: string;
@@ -58,15 +61,22 @@ export interface Question {
   type: 'mcq' | 'coding' | 'short_answer';
   topic: string;
   difficulty: 'easy' | 'medium' | 'hard';
+<<<<<<< HEAD
   target_department?: string;
   target_year?: string;
+=======
+>>>>>>> 405336aebf096f4e6de80aca2cdfa7d960f35ea4
   content: {
     questionText: string;
     options?: string[];
     correctAnswer?: string | number;
     explanation?: string;
     starterCode?: string;
+<<<<<<< HEAD
     testCases?: { input: string; expectedOutput: string; isPublic?: boolean }[];
+=======
+    testCases?: { input: string; expectedOutput: string }[];
+>>>>>>> 405336aebf096f4e6de80aca2cdfa7d960f35ea4
   };
   marks?: number;
   created_by?: string;
@@ -79,8 +89,11 @@ export interface Test {
   type: 'daily_practice' | 'weekly_assessment' | 'custom';
   batch_id?: string;
   batch_name?: string;
+<<<<<<< HEAD
   target_department?: string;
   target_year?: string;
+=======
+>>>>>>> 405336aebf096f4e6de80aca2cdfa7d960f35ea4
   start_time: string;
   end_time: string;
   duration_minutes: number;
@@ -198,8 +211,13 @@ export const SEED_PROFILES: Profile[] = [
     email: 'student@svce.ac.in',
     full_name: 'Alex Johnson',
     role: 'student',
+<<<<<<< HEAD
     department: 'CSE',
     year_of_study: '4',
+=======
+    department: 'Computer Science',
+    year_of_study: 'Final Year',
+>>>>>>> 405336aebf096f4e6de80aca2cdfa7d960f35ea4
     batch_id: 'b1111111-1111-1111-1111-111111111111',
     is_verified: true,
     created_at: new Date().toISOString(),
@@ -209,12 +227,18 @@ export const SEED_PROFILES: Profile[] = [
     email: 'faculty@svce.ac.in',
     full_name: 'Dr. Sarah Connor',
     role: 'faculty',
+<<<<<<< HEAD
     department: 'CSE',
     year_of_study: 'All',
+=======
+    department: 'Computer Science',
+    year_of_study: 'N/A',
+>>>>>>> 405336aebf096f4e6de80aca2cdfa7d960f35ea4
     is_verified: true,
     created_at: new Date().toISOString(),
   },
   {
+<<<<<<< HEAD
     id: 's4444444-4444-4444-4444-444444444444',
     email: 'rajesh@svce.ac.in',
     full_name: 'Rajesh Kumar',
@@ -255,6 +279,14 @@ export const SEED_PROFILES: Profile[] = [
     department: 'MECH',
     year_of_study: '4',
     batch_id: 'b1111111-1111-1111-1111-111111111111',
+=======
+    id: 'a3333333-3333-3333-3333-333333333333',
+    email: 'placetrackpro@admin.co.in',
+    full_name: 'System Admin',
+    role: 'admin',
+    department: 'Placement Cell',
+    year_of_study: 'N/A',
+>>>>>>> 405336aebf096f4e6de80aca2cdfa7d960f35ea4
     is_verified: true,
     created_at: new Date().toISOString(),
   },
@@ -262,6 +294,7 @@ export const SEED_PROFILES: Profile[] = [
 
 export const MOCK_BATCHES = SEED_BATCHES;
 export const MOCK_PROFILES = SEED_PROFILES;
+<<<<<<< HEAD
 
 export const SEED_QUESTION_BANKS: QuestionBank[] = [
   {
@@ -602,3 +635,13 @@ export const MOCK_ATTENDANCE = SEED_ATTENDANCE;
 export const MOCK_AUDIT_LOGS: AuditLog[] = [];
 
 
+=======
+export const MOCK_QUESTION_BANKS: QuestionBank[] = [];
+export const MOCK_QUESTIONS: Question[] = [];
+export const MOCK_TESTS: Test[] = [];
+export const MOCK_TEST_ATTEMPTS: TestAttempt[] = [];
+export const MOCK_PROCTORING_EVENTS: ProctoringEvent[] = [];
+export const MOCK_ATTENDANCE: AttendanceRecord[] = [];
+export const MOCK_AUDIT_LOGS: AuditLog[] = [];
+
+>>>>>>> 405336aebf096f4e6de80aca2cdfa7d960f35ea4

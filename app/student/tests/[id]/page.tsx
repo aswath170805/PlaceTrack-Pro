@@ -20,12 +20,16 @@ import {
   Code, 
   FileText,
   AlertTriangle,
+<<<<<<< HEAD
   Play,
   Sparkles,
   Terminal,
   Loader2,
   Lock,
   Eye
+=======
+  Play
+>>>>>>> 405336aebf096f4e6de80aca2cdfa7d960f35ea4
 } from 'lucide-react';
 
 export default function TestEnvironment() {
@@ -44,6 +48,7 @@ export default function TestEnvironment() {
   const [showConfirmModal, setShowConfirmModal] = useState<boolean>(false);
   const [codeOutput, setCodeOutput] = useState<string | null>(null);
 
+<<<<<<< HEAD
   // LeetCode UI State
   const [activeTab, setActiveTab] = useState<'description' | 'ai'>('description');
   const [aiResponse, setAiResponse] = useState<string>('');
@@ -52,6 +57,8 @@ export default function TestEnvironment() {
   const [isSubmitting, setIsSubmitting] = useState<boolean>(false);
   const [consoleStatus, setConsoleStatus] = useState<'idle' | 'pass' | 'fail'>('idle');
 
+=======
+>>>>>>> 405336aebf096f4e6de80aca2cdfa7d960f35ea4
   const currentQ = questions[currentIdx];
 
   // Timer Countdown Effect
@@ -84,6 +91,7 @@ export default function TestEnvironment() {
     setTimeout(() => setIsSaved(true), 400);
   };
 
+<<<<<<< HEAD
   // Real JS Execution Engine
   const executeTests = (isSubmit: boolean) => {
     if (language !== 'javascript') {
@@ -226,6 +234,11 @@ export default function TestEnvironment() {
       debugMsg += '✅ Code structure looks valid. If tests are failing, check:\n• Edge cases (empty arrays, negative numbers)\n• Off-by-one errors in loops\n• Correct handling of the input format';
     }
     setAiResponse(debugMsg);
+=======
+  // Handle Code Run Simulation
+  const handleRunCode = () => {
+    setCodeOutput('⚡ Running Test Cases...\nTest Case 1: [2,7,11,15], target=9 -> Output: [0, 1] PASSED ✓\nTest Case 2: [3,2,4], target=6 -> Output: [1, 2] PASSED ✓\n\nAll test cases passed cleanly! Time: 4ms');
+>>>>>>> 405336aebf096f4e6de80aca2cdfa7d960f35ea4
   };
 
   // Log Proctoring Event Callback
@@ -235,10 +248,15 @@ export default function TestEnvironment() {
 
   // Submit Test Handler
   const handleSubmitTest = () => {
+<<<<<<< HEAD
+=======
+    // Generate new attempt ID and route to immediate results page
+>>>>>>> 405336aebf096f4e6de80aca2cdfa7d960f35ea4
     const newAttemptId = 'att-' + Math.random().toString(36).substring(2, 8);
     router.push(`/student/results/${newAttemptId}`);
   };
 
+<<<<<<< HEAD
   // Render colored console output
   const renderConsoleOutput = (output: string) => {
     return output.split('\n').map((line, i) => {
@@ -254,6 +272,8 @@ export default function TestEnvironment() {
     });
   };
 
+=======
+>>>>>>> 405336aebf096f4e6de80aca2cdfa7d960f35ea4
   return (
     <div className="min-h-screen bg-slate-900 text-slate-100 flex flex-col justify-between selection:bg-blue-600 selection:text-white">
       
@@ -273,10 +293,15 @@ export default function TestEnvironment() {
             <span>{isSaved ? 'Answers Auto-Saved' : 'Saving...'}</span>
           </div>
 
+<<<<<<< HEAD
           <div className={`flex items-center space-x-2 px-3 py-1.5 rounded-xl border font-mono text-sm font-bold ${
             timeLeft < 300 ? 'bg-red-950 border-red-800 text-red-400 animate-pulse' : 'bg-slate-900 border-slate-800 text-emerald-400'
           }`}>
             <Clock className="w-4 h-4" />
+=======
+          <div className="flex items-center space-x-2 bg-slate-900 px-3 py-1.5 rounded-xl border border-slate-800 font-mono text-sm text-emerald-400 font-bold">
+            <Clock className="w-4 h-4 text-emerald-400" />
+>>>>>>> 405336aebf096f4e6de80aca2cdfa7d960f35ea4
             <span>{formatTime(timeLeft)}</span>
           </div>
 
@@ -295,6 +320,7 @@ export default function TestEnvironment() {
         
         {/* Left / Center: Question Panel */}
         <div className="lg:col-span-3 bg-slate-950/80 border border-slate-800/80 rounded-2xl p-6 flex flex-col justify-between shadow-2xl">
+<<<<<<< HEAD
           <div className={currentQ.type === 'coding' ? 'h-full flex flex-col' : ''}>
             {currentQ.type !== 'coding' ? (
               <>
@@ -526,6 +552,92 @@ export default function TestEnvironment() {
                 </div>
               </div>
             )}
+=======
+          <div>
+            
+            {/* Question Header */}
+            <div className="flex items-center justify-between pb-4 border-b border-slate-800 mb-6">
+              <div className="flex items-center space-x-2">
+                <span className="text-xs font-mono bg-slate-800 text-slate-300 px-2.5 py-1 rounded-lg">
+                  Question {currentIdx + 1} of {questions.length}
+                </span>
+                <span className="text-xs font-semibold text-blue-400 bg-blue-950 px-2.5 py-1 rounded-lg border border-blue-800/50">
+                  Topic: {currentQ.topic}
+                </span>
+                <span className={`text-xs font-semibold px-2.5 py-1 rounded-lg capitalize ${
+                  currentQ.difficulty === 'easy' ? 'bg-emerald-950 text-emerald-400 border border-emerald-800/50' : 'bg-amber-950 text-amber-400 border border-amber-800/50'
+                }`}>
+                  {currentQ.difficulty}
+                </span>
+              </div>
+            </div>
+
+            {/* Question Statement */}
+            <div className="mb-6">
+              <h2 className="text-lg font-semibold text-slate-100 leading-relaxed mb-4">
+                {currentQ.content.questionText}
+              </h2>
+            </div>
+
+            {/* MCQ Options OR Coding Workspace */}
+            {currentQ.type === 'mcq' && currentQ.content.options && (
+              <div className="space-y-3 max-w-2xl">
+                {currentQ.content.options.map((opt, idx) => (
+                  <button
+                    key={idx}
+                    onClick={() => handleSelectAnswer(currentQ.id, idx)}
+                    className={`w-full text-left p-4 rounded-xl border text-sm font-medium transition-all flex items-center justify-between ${
+                      answers[currentQ.id] === idx
+                        ? 'bg-blue-600/20 border-blue-500 text-white shadow-md'
+                        : 'bg-slate-900 border-slate-800 text-slate-300 hover:bg-slate-800 hover:text-white'
+                    }`}
+                  >
+                    <div className="flex items-center space-x-3">
+                      <span className={`w-7 h-7 rounded-lg flex items-center justify-center text-xs font-bold ${
+                        answers[currentQ.id] === idx ? 'bg-blue-600 text-white' : 'bg-slate-800 text-slate-400'
+                      }`}>
+                        {String.fromCharCode(65 + idx)}
+                      </span>
+                      <span>{opt}</span>
+                    </div>
+                    {answers[currentQ.id] === idx && (
+                      <CheckCircle2 className="w-5 h-5 text-blue-400" />
+                    )}
+                  </button>
+                ))}
+              </div>
+            )}
+
+            {currentQ.type === 'coding' && (
+              <div className="space-y-4">
+                <div className="bg-slate-900 border border-slate-800 rounded-xl overflow-hidden font-mono text-sm">
+                  <div className="bg-slate-950 px-4 py-2 text-xs text-slate-400 border-b border-slate-800 flex justify-between items-center">
+                    <span>JavaScript Editor</span>
+                    <button
+                      onClick={handleRunCode}
+                      className="px-3 py-1 bg-emerald-600 hover:bg-emerald-500 text-white font-bold text-xs rounded flex items-center transition-colors"
+                    >
+                      <Play className="w-3 h-3 mr-1" />
+                      Run Test Cases
+                    </button>
+                  </div>
+                  <textarea
+                    value={answers[currentQ.id] || currentQ.content.starterCode || ''}
+                    onChange={(e) => handleSelectAnswer(currentQ.id, e.target.value)}
+                    rows={8}
+                    className="w-full p-4 bg-slate-900 text-emerald-400 focus:outline-none font-mono text-xs leading-relaxed resize-none"
+                  />
+                </div>
+
+                {codeOutput && (
+                  <div className="p-3 bg-slate-950 border border-slate-800 rounded-xl font-mono text-xs text-slate-300 whitespace-pre-wrap">
+                    {codeOutput}
+                  </div>
+                )}
+              </div>
+            )}
+
+>>>>>>> 405336aebf096f4e6de80aca2cdfa7d960f35ea4
           </div>
 
           {/* Navigation Controls */}

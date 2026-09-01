@@ -3,7 +3,10 @@
 import React, { useEffect, useState } from 'react';
 import { DatabaseService } from '@/lib/dbService';
 import { MOCK_BATCHES, Profile, Batch } from '@/lib/mockData';
+<<<<<<< HEAD
 import { useAuth } from '@/lib/authContext';
+=======
+>>>>>>> 405336aebf096f4e6de80aca2cdfa7d960f35ea4
 import { 
   Users, 
   UserCheck, 
@@ -18,7 +21,10 @@ import {
 } from 'lucide-react';
 
 export default function AdminUserManagementPage() {
+<<<<<<< HEAD
   const { user: currentUser } = useAuth();
+=======
+>>>>>>> 405336aebf096f4e6de80aca2cdfa7d960f35ea4
   const [users, setUsers] = useState<Profile[]>([]);
   const [pendingUsers, setPendingUsers] = useState<Profile[]>([]);
   const [actionSuccess, setActionSuccess] = useState<string | null>(null);
@@ -43,9 +49,15 @@ export default function AdminUserManagementPage() {
     const requests = await DatabaseService.getVerificationRequests();
     const req = requests.find((r) => r.user_id === userId && r.status === 'pending');
     if (req) {
+<<<<<<< HEAD
       await DatabaseService.approveVerificationRequest(req.id, userId, currentUser?.id);
     } else {
       await DatabaseService.approveVerificationRequest('00000000-0000-0000-0000-000000000000', userId, currentUser?.id);
+=======
+      await DatabaseService.approveVerificationRequest(req.id, userId);
+    } else {
+      await DatabaseService.createProfile({ id: userId, full_name: name, is_verified: true });
+>>>>>>> 405336aebf096f4e6de80aca2cdfa7d960f35ea4
     }
     
     // Update local state live
@@ -53,12 +65,17 @@ export default function AdminUserManagementPage() {
     const allProfiles = await DatabaseService.getProfiles();
     setUsers(allProfiles.filter((p) => p.is_verified));
 
+<<<<<<< HEAD
     setActionSuccess(`Access granted to ${name}. They can now sign in to their portal.`);
+=======
+    setActionSuccess(`Access Granted to ${name}! Account is now verified in database.`);
+>>>>>>> 405336aebf096f4e6de80aca2cdfa7d960f35ea4
     setTimeout(() => setActionSuccess(null), 4000);
   };
 
   const handleRevokeAccess = async (userId: string, name: string) => {
     const requests = await DatabaseService.getVerificationRequests();
+<<<<<<< HEAD
     const req = requests.find((r) => r.user_id === userId && (r.status === 'pending' || r.status === 'approved'));
     if (req) {
       await DatabaseService.rejectVerificationRequest(req.id, userId, undefined, currentUser?.id);
@@ -68,6 +85,15 @@ export default function AdminUserManagementPage() {
     
     const allProfiles = await DatabaseService.getProfiles();
     setUsers(allProfiles.filter((p) => p.is_verified));
+=======
+    const req = requests.find((r) => r.user_id === userId && r.status === 'pending');
+    if (req) {
+      await DatabaseService.rejectVerificationRequest(req.id, userId);
+    }
+    
+    setUsers((prev) => prev.filter((u) => u.id !== userId));
+    const allProfiles = await DatabaseService.getProfiles();
+>>>>>>> 405336aebf096f4e6de80aca2cdfa7d960f35ea4
     setPendingUsers(allProfiles.filter((p) => !p.is_verified));
 
     setActionSuccess(`Access Revoked for ${name}.`);
@@ -75,7 +101,11 @@ export default function AdminUserManagementPage() {
   };
 
   const handleRoleChange = async (userId: string, newRole: 'student' | 'faculty' | 'admin') => {
+<<<<<<< HEAD
     await DatabaseService.updateProfileRole(userId, newRole, currentUser?.id);
+=======
+    await DatabaseService.updateProfileRole(userId, newRole);
+>>>>>>> 405336aebf096f4e6de80aca2cdfa7d960f35ea4
     setUsers((prev) =>
       prev.map((u) => (u.id === userId ? { ...u, role: newRole } : u))
     );
@@ -93,7 +123,11 @@ export default function AdminUserManagementPage() {
               <span>Identity & Account Verification Desk</span>
             </div>
             <h1 className="text-2xl font-black text-slate-900">User Governance & Access Control Desk</h1>
+<<<<<<< HEAD
             <p className="text-xs text-slate-500">Approve new faculty/student access requests. After you grant access, they can sign in to their portal.</p>
+=======
+            <p className="text-xs text-slate-500">Live sync: Verify new student & teacher registrations (@svce.ac.in) and manage system permissions</p>
+>>>>>>> 405336aebf096f4e6de80aca2cdfa7d960f35ea4
           </div>
 
           <div className="flex items-center space-x-2 bg-white px-3 py-1.5 rounded-xl border border-slate-200 shadow-xs text-xs text-slate-500 font-mono">

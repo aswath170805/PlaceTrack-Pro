@@ -11,6 +11,7 @@ import {
   AttendanceRecord,
   AuditLog,
   Announcement,
+<<<<<<< HEAD
   PlacementDrive,
   MOCK_PROFILES,
   SEED_QUESTION_BANKS,
@@ -63,11 +64,17 @@ function mergeById<T extends { id: string }>(primary: T[], extra: T[]): T[] {
   return Array.from(map.values());
 }
 
+=======
+  PlacementDrive
+} from '@/lib/mockData';
+
+>>>>>>> 405336aebf096f4e6de80aca2cdfa7d960f35ea4
 export class DatabaseService {
   private static getSupabase() {
     return createClient();
   }
 
+<<<<<<< HEAD
   static saveCredential(email: string, password: string): void {
     const creds = readLocal<Record<string, string>>(LS_CREDS, {});
     creds[email.toLowerCase().trim()] = password;
@@ -81,6 +88,8 @@ export class DatabaseService {
     return stored === password;
   }
 
+=======
+>>>>>>> 405336aebf096f4e6de80aca2cdfa7d960f35ea4
   // BATCHES
   static async getBatches(): Promise<Batch[]> {
     try {
@@ -110,6 +119,7 @@ export class DatabaseService {
 
   // PROFILES & VERIFICATION
   static async getProfiles(): Promise<Profile[]> {
+<<<<<<< HEAD
     const local = readLocal<Profile[]>(LS_PROFILES, []);
     let remote: Profile[] = [];
     try {
@@ -166,12 +176,37 @@ export class DatabaseService {
         year_of_study: localProfile.year_of_study,
         batch_id: localProfile.batch_id,
         is_verified: localProfile.is_verified,
+=======
+    try {
+      const supabase = this.getSupabase();
+      const { data, error } = await supabase.from('profiles').select('*').order('created_at', { ascending: false });
+      if (!error && data) return data as Profile[];
+    } catch (e) {
+      console.warn('Supabase getProfiles error:', e);
+    }
+    return [];
+  }
+
+  static async createProfile(profile: Partial<Profile>): Promise<Profile | null> {
+    try {
+      const supabase = this.getSupabase();
+      const { data, error } = await supabase.from('profiles').insert([{
+        id: profile.id || undefined,
+        email: profile.email,
+        full_name: profile.full_name,
+        role: profile.role,
+        department: profile.department || 'Computer Science',
+        year_of_study: profile.year_of_study || 'Final Year',
+        batch_id: profile.batch_id,
+        is_verified: profile.is_verified ?? false,
+>>>>>>> 405336aebf096f4e6de80aca2cdfa7d960f35ea4
       }]).select().single();
 
       if (!error && data) return data as Profile;
     } catch (e) {
       console.warn('Supabase createProfile error:', e);
     }
+<<<<<<< HEAD
 
     return localProfile;
   }
@@ -209,11 +244,24 @@ export class DatabaseService {
       }
     } catch (e) {
       console.warn('Backend updateProfileRole error:', e);
+=======
+    return null;
+  }
+
+  static async updateProfileRole(userId: string, role: 'student' | 'faculty' | 'admin'): Promise<void> {
+    try {
+      const supabase = this.getSupabase();
+      await supabase.from('profiles').update({ role }).eq('id', userId);
+      await this.logAdminAction('UPDATE_USER_ROLE', 'profiles', userId, { new_role: role });
+    } catch (e) {
+      console.warn('Supabase updateProfileRole error:', e);
+>>>>>>> 405336aebf096f4e6de80aca2cdfa7d960f35ea4
     }
   }
 
   // VERIFICATION REQUESTS (Admin Verification Desk)
   static async getVerificationRequests(): Promise<VerificationRequest[]> {
+<<<<<<< HEAD
     const local = readLocal<VerificationRequest[]>(LS_REQUESTS, []);
     let remote: VerificationRequest[] = [];
     try {
@@ -253,6 +301,29 @@ export class DatabaseService {
         department: localRequest.department,
         year_of_study: localRequest.year_of_study,
         batch_id: localRequest.batch_id,
+=======
+    try {
+      const supabase = this.getSupabase();
+      const { data, error } = await supabase.from('verification_requests').select('*').order('submitted_at', { ascending: false });
+      if (!error && data) return data as VerificationRequest[];
+    } catch (e) {
+      console.warn('Supabase getVerificationRequests error:', e);
+    }
+    return [];
+  }
+
+  static async createVerificationRequest(reqData: Partial<VerificationRequest>): Promise<VerificationRequest | null> {
+    try {
+      const supabase = this.getSupabase();
+      const { data, error } = await supabase.from('verification_requests').insert([{
+        user_id: reqData.user_id,
+        student_name: reqData.student_name,
+        email: reqData.email,
+        role: reqData.role,
+        department: reqData.department,
+        year_of_study: reqData.year_of_study,
+        batch_id: reqData.batch_id,
+>>>>>>> 405336aebf096f4e6de80aca2cdfa7d960f35ea4
         status: 'pending',
       }]).select().single();
 
@@ -260,6 +331,7 @@ export class DatabaseService {
     } catch (e) {
       console.warn('Supabase createVerificationRequest error:', e);
     }
+<<<<<<< HEAD
 
     return localRequest;
   }
@@ -296,10 +368,29 @@ export class DatabaseService {
       }
     } catch (e) {
       console.warn('Backend approveVerificationRequest error:', e);
+=======
+    return null;
+  }
+
+  static async approveVerificationRequest(requestId: string, userId: string, reviewerId?: string): Promise<void> {
+    try {
+      const supabase = this.getSupabase();
+      await supabase.from('verification_requests').update({
+        status: 'approved',
+        reviewed_at: new Date().toISOString(),
+        reviewed_by: reviewerId
+      }).eq('id', requestId);
+
+      await supabase.from('profiles').update({ is_verified: true }).eq('id', userId);
+      await this.logAdminAction('APPROVE_USER_VERIFICATION', 'verification_requests', requestId, { user_id: userId });
+    } catch (e) {
+      console.warn('Supabase approveVerificationRequest error:', e);
+>>>>>>> 405336aebf096f4e6de80aca2cdfa7d960f35ea4
     }
   }
 
   static async rejectVerificationRequest(requestId: string, userId: string, reason?: string, reviewerId?: string): Promise<void> {
+<<<<<<< HEAD
     const requests = readLocal<VerificationRequest[]>(LS_REQUESTS, []);
     writeLocal(
       LS_REQUESTS,
@@ -337,11 +428,27 @@ export class DatabaseService {
       }
     } catch (e) {
       console.warn('Backend rejectVerificationRequest error:', e);
+=======
+    try {
+      const supabase = this.getSupabase();
+      await supabase.from('verification_requests').update({
+        status: 'rejected',
+        rejection_reason: reason || 'Access request rejected by Placement Admin.',
+        reviewed_at: new Date().toISOString(),
+        reviewed_by: reviewerId
+      }).eq('id', requestId);
+
+      await supabase.from('profiles').update({ is_verified: false }).eq('id', userId);
+      await this.logAdminAction('REJECT_USER_VERIFICATION', 'verification_requests', requestId, { user_id: userId, reason });
+    } catch (e) {
+      console.warn('Supabase rejectVerificationRequest error:', e);
+>>>>>>> 405336aebf096f4e6de80aca2cdfa7d960f35ea4
     }
   }
 
   // QUESTION BANKS & QUESTIONS
   static async getQuestionBanks(): Promise<QuestionBank[]> {
+<<<<<<< HEAD
     const local = readLocal<QuestionBank[]>(LS_QUESTION_BANKS, SEED_QUESTION_BANKS);
     let remote: QuestionBank[] = [];
     try {
@@ -379,11 +486,32 @@ export class DatabaseService {
         description,
         target_department: localBank.target_department,
         target_year: localBank.target_year
+=======
+    try {
+      const supabase = this.getSupabase();
+      const { data, error } = await supabase.from('question_banks').select('*').order('created_at', { ascending: false });
+      if (!error && data) return data as QuestionBank[];
+    } catch (e) {
+      console.warn('Supabase getQuestionBanks error:', e);
+    }
+    return [];
+  }
+
+  static async createQuestionBank(title: string, topic: string, createdBy: string, description?: string): Promise<QuestionBank | null> {
+    try {
+      const supabase = this.getSupabase();
+      const { data, error } = await supabase.from('question_banks').insert([{
+        title,
+        topic,
+        created_by: createdBy,
+        description
+>>>>>>> 405336aebf096f4e6de80aca2cdfa7d960f35ea4
       }]).select().single();
       if (!error && data) return data as QuestionBank;
     } catch (e) {
       console.warn('Supabase createQuestionBank error:', e);
     }
+<<<<<<< HEAD
     return localBank;
   }
 
@@ -405,11 +533,18 @@ export class DatabaseService {
   static async getQuestions(bankId?: string): Promise<Question[]> {
     const local = readLocal<Question[]>(LS_QUESTIONS, SEED_QUESTIONS);
     let remote: Question[] = [];
+=======
+    return null;
+  }
+
+  static async getQuestions(bankId?: string): Promise<Question[]> {
+>>>>>>> 405336aebf096f4e6de80aca2cdfa7d960f35ea4
     try {
       const supabase = this.getSupabase();
       let query = supabase.from('questions').select('*').order('created_at', { ascending: false });
       if (bankId) query = query.eq('bank_id', bankId);
       const { data, error } = await query;
+<<<<<<< HEAD
       if (!error && data) remote = data as Question[];
     } catch (e) {
       console.warn('Supabase getQuestions error:', e);
@@ -447,11 +582,31 @@ export class DatabaseService {
         marks: localQ.marks,
         target_department: localQ.target_department,
         target_year: localQ.target_year
+=======
+      if (!error && data) return data as Question[];
+    } catch (e) {
+      console.warn('Supabase getQuestions error:', e);
+    }
+    return [];
+  }
+
+  static async createQuestion(question: Partial<Question>): Promise<Question | null> {
+    try {
+      const supabase = this.getSupabase();
+      const { data, error } = await supabase.from('questions').insert([{
+        bank_id: question.bank_id,
+        type: question.type,
+        topic: question.topic,
+        difficulty: question.difficulty,
+        content: question.content,
+        marks: question.marks || 1,
+>>>>>>> 405336aebf096f4e6de80aca2cdfa7d960f35ea4
       }]).select().single();
       if (!error && data) return data as Question;
     } catch (e) {
       console.warn('Supabase createQuestion error:', e);
     }
+<<<<<<< HEAD
     return localQ;
   }
 
@@ -468,10 +623,14 @@ export class DatabaseService {
       console.warn('Supabase updateQuestion error:', e);
     }
     return updated.find(q => q.id === questionId) || null;
+=======
+    return null;
+>>>>>>> 405336aebf096f4e6de80aca2cdfa7d960f35ea4
   }
 
   // TESTS & TEST ATTEMPTS
   static async getTests(): Promise<Test[]> {
+<<<<<<< HEAD
     const local = readLocal<Test[]>(LS_TESTS, SEED_TESTS);
     let remote: Test[] = [];
     try {
@@ -520,22 +679,52 @@ export class DatabaseService {
         instructions: localTest.instructions,
         target_department: localTest.target_department,
         target_year: localTest.target_year,
+=======
+    try {
+      const supabase = this.getSupabase();
+      const { data, error } = await supabase.from('tests').select('*').order('created_at', { ascending: false });
+      if (!error && data) return data as Test[];
+    } catch (e) {
+      console.warn('Supabase getTests error:', e);
+    }
+    return [];
+  }
+
+  static async createTest(testData: Partial<Test>): Promise<Test | null> {
+    try {
+      const supabase = this.getSupabase();
+      const { data, error } = await supabase.from('tests').insert([{
+        title: testData.title,
+        type: testData.type,
+        batch_id: testData.batch_id,
+        duration_minutes: testData.duration_minutes,
+        is_proctored: testData.is_proctored,
+        instructions: testData.instructions,
+>>>>>>> 405336aebf096f4e6de80aca2cdfa7d960f35ea4
       }]).select().single();
       if (!error && data) return data as Test;
     } catch (e) {
       console.warn('Supabase createTest error:', e);
     }
+<<<<<<< HEAD
     return localTest;
   }
 
   static async getTestAttempts(studentId?: string): Promise<TestAttempt[]> {
     const local = readLocal<TestAttempt[]>(LS_TEST_ATTEMPTS, SEED_TEST_ATTEMPTS);
     let remote: TestAttempt[] = [];
+=======
+    return null;
+  }
+
+  static async getTestAttempts(studentId?: string): Promise<TestAttempt[]> {
+>>>>>>> 405336aebf096f4e6de80aca2cdfa7d960f35ea4
     try {
       const supabase = this.getSupabase();
       let query = supabase.from('test_attempts').select('*').order('started_at', { ascending: false });
       if (studentId) query = query.eq('student_id', studentId);
       const { data, error } = await query;
+<<<<<<< HEAD
       if (!error && data) remote = data as TestAttempt[];
     } catch (e) {
       console.warn('Supabase getTestAttempts error:', e);
@@ -568,17 +757,38 @@ export class DatabaseService {
       const supabase = this.getSupabase();
       const { data, error } = await supabase.from('test_attempts').insert([{
         id: localAttempt.id,
+=======
+      if (!error && data) return data as TestAttempt[];
+    } catch (e) {
+      console.warn('Supabase getTestAttempts error:', e);
+    }
+    return [];
+  }
+
+  static async submitTestAttempt(attemptData: Partial<TestAttempt>): Promise<TestAttempt | null> {
+    try {
+      const supabase = this.getSupabase();
+      const { data, error } = await supabase.from('test_attempts').insert([{
+>>>>>>> 405336aebf096f4e6de80aca2cdfa7d960f35ea4
         test_id: attemptData.test_id,
         student_id: attemptData.student_id,
         score: attemptData.score,
         status: 'submitted',
+<<<<<<< HEAD
         submitted_at: localAttempt.submitted_at,
+=======
+        submitted_at: new Date().toISOString(),
+>>>>>>> 405336aebf096f4e6de80aca2cdfa7d960f35ea4
       }]).select().single();
       if (!error && data) return data as TestAttempt;
     } catch (e) {
       console.warn('Supabase submitTestAttempt error:', e);
     }
+<<<<<<< HEAD
     return localAttempt;
+=======
+    return null;
+>>>>>>> 405336aebf096f4e6de80aca2cdfa7d960f35ea4
   }
 
   // PROCTORING EVENTS
@@ -614,13 +824,17 @@ export class DatabaseService {
 
   // ATTENDANCE
   static async getAttendanceRecords(studentId?: string): Promise<AttendanceRecord[]> {
+<<<<<<< HEAD
     const local = readLocal<AttendanceRecord[]>(LS_ATTENDANCE, SEED_ATTENDANCE);
     let remote: AttendanceRecord[] = [];
+=======
+>>>>>>> 405336aebf096f4e6de80aca2cdfa7d960f35ea4
     try {
       const supabase = this.getSupabase();
       let query = supabase.from('attendance').select('*').order('created_at', { ascending: false });
       if (studentId) query = query.eq('student_id', studentId);
       const { data, error } = await query;
+<<<<<<< HEAD
       if (!error && data) remote = data as AttendanceRecord[];
     } catch (e) {
       console.warn('Supabase getAttendanceRecords error:', e);
@@ -634,6 +848,16 @@ export class DatabaseService {
     const updated = local.map(a => a.id === recordId ? { ...a, absence_reason: reason, reviewed_by_faculty: false } : a);
     writeLocal(LS_ATTENDANCE, updated);
 
+=======
+      if (!error && data) return data as AttendanceRecord[];
+    } catch (e) {
+      console.warn('Supabase getAttendanceRecords error:', e);
+    }
+    return [];
+  }
+
+  static async submitAbsenceReason(recordId: string, reason: string): Promise<void> {
+>>>>>>> 405336aebf096f4e6de80aca2cdfa7d960f35ea4
     try {
       const supabase = this.getSupabase();
       await supabase.from('attendance').update({ absence_reason: reason, reviewed_by_faculty: false }).eq('id', recordId);
@@ -643,10 +867,13 @@ export class DatabaseService {
   }
 
   static async reviewAttendance(recordId: string, statusOverride?: 'present' | 'absent'): Promise<void> {
+<<<<<<< HEAD
     const local = readLocal<AttendanceRecord[]>(LS_ATTENDANCE, SEED_ATTENDANCE);
     const updated = local.map(a => a.id === recordId ? { ...a, reviewed_by_faculty: true, status: statusOverride || a.status } : a);
     writeLocal(LS_ATTENDANCE, updated);
 
+=======
+>>>>>>> 405336aebf096f4e6de80aca2cdfa7d960f35ea4
     try {
       const supabase = this.getSupabase();
       const updates: any = { reviewed_by_faculty: true };

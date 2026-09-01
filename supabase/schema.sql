@@ -449,6 +449,7 @@ CREATE POLICY "Public Write Placement Drives" ON public.placement_drives FOR ALL
 CREATE POLICY "Public Read Verification Requests" ON public.verification_requests FOR SELECT USING (true);
 CREATE POLICY "Public Write Verification Requests" ON public.verification_requests FOR ALL USING (true);
 
+<<<<<<< HEAD
 
 -- ==============================================================================
 -- ROLE & ACCESS MODIFICATION SAFETY TRIGGER (Backend/Database validation)
@@ -474,3 +475,5 @@ DROP TRIGGER IF EXISTS trg_protect_profile_roles ON public.profiles;
 CREATE TRIGGER trg_protect_profile_roles
 BEFORE UPDATE ON public.profiles
 FOR EACH ROW EXECUTE FUNCTION protect_profile_roles();
+=======
+>>>>>>> 405336aebf096f4e6de80aca2cdfa7d960f35ea4

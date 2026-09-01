@@ -4,12 +4,17 @@ import React, { useEffect, useState } from 'react';
 import Link from 'next/link';
 import { useAuth } from '@/lib/authContext';
 import { DatabaseService } from '@/lib/dbService';
+<<<<<<< HEAD
 import { Batch, Test, QuestionBank, AttendanceRecord, TestAttempt, Profile } from '@/lib/mockData';
+=======
+import { Batch, Test, QuestionBank, AttendanceRecord } from '@/lib/mockData';
+>>>>>>> 405336aebf096f4e6de80aca2cdfa7d960f35ea4
 import { 
   PlusCircle, 
   BookOpen, 
   Users, 
   CalendarCheck, 
+<<<<<<< HEAD
   FileCheck2,
   FileDown,
   TrendingUp,
@@ -179,6 +184,11 @@ const StudentReportPDF = ({ attempt }: { attempt: TestAttempt }) => (
 // Department colors for the Pie chart
 const DEPT_COLORS = ['#2563eb', '#10b981', '#f59e0b', '#ef4444', '#8b5cf6'];
 
+=======
+  FileCheck2 
+} from 'lucide-react';
+
+>>>>>>> 405336aebf096f4e6de80aca2cdfa7d960f35ea4
 export default function FacultyDashboard() {
   const { user } = useAuth();
 
@@ -186,32 +196,44 @@ export default function FacultyDashboard() {
   const [batches, setBatches] = useState<Batch[]>([]);
   const [questionBanks, setQuestionBanks] = useState<QuestionBank[]>([]);
   const [attendance, setAttendance] = useState<AttendanceRecord[]>([]);
+<<<<<<< HEAD
   const [attempts, setAttempts] = useState<TestAttempt[]>([]);
   const [profiles, setProfiles] = useState<Profile[]>([]);
   const [isMounted, setIsMounted] = useState<boolean>(false);
 
   useEffect(() => {
     setIsMounted(true);
+=======
+
+  useEffect(() => {
+>>>>>>> 405336aebf096f4e6de80aca2cdfa7d960f35ea4
     async function loadFacultyData() {
       const t = await DatabaseService.getTests();
       const b = await DatabaseService.getBatches();
       const qb = await DatabaseService.getQuestionBanks();
       const att = await DatabaseService.getAttendanceRecords();
+<<<<<<< HEAD
       const ta = await DatabaseService.getTestAttempts();
       const p = await DatabaseService.getProfiles();
       
+=======
+>>>>>>> 405336aebf096f4e6de80aca2cdfa7d960f35ea4
       setTests(t);
       setBatches(b);
       setQuestionBanks(qb);
       setAttendance(att);
+<<<<<<< HEAD
       setAttempts(ta);
       setProfiles(p);
+=======
+>>>>>>> 405336aebf096f4e6de80aca2cdfa7d960f35ea4
     }
     loadFacultyData();
   }, []);
 
   const pendingAbsenceCount = attendance.filter((a) => a.status === 'absent' && !a.reviewed_by_faculty).length;
 
+<<<<<<< HEAD
   // Process data for Weekly Activity Chart (attempts and average scores over the week)
   const weeklyActivityData = [
     { name: 'Mon', attempts: 12, avgScore: 78 },
@@ -259,12 +281,26 @@ export default function FacultyDashboard() {
         <div className="max-w-7xl mx-auto flex flex-col md:flex-row md:items-center justify-between gap-6">
           <div>
             <span className="inline-block px-3 py-1 bg-blue-500/20 border border-blue-400/30 rounded-full text-xs font-bold text-blue-300 mb-3">
+=======
+  return (
+    <div className="min-h-screen bg-slate-50 pb-12">
+      
+      {/* Faculty Hero Banner */}
+      <div className="bg-gradient-to-r from-indigo-900 via-slate-900 to-blue-900 text-white pt-8 pb-16 px-4 sm:px-6 lg:px-8 shadow-inner">
+        <div className="max-w-7xl mx-auto flex flex-col md:flex-row md:items-center justify-between gap-6">
+          <div>
+            <span className="inline-block px-3 py-1 bg-indigo-500/20 border border-indigo-400/30 rounded-full text-xs font-bold text-indigo-200 mb-3">
+>>>>>>> 405336aebf096f4e6de80aca2cdfa7d960f35ea4
               Faculty Command Center
             </span>
             <h1 className="text-3xl font-extrabold tracking-tight sm:text-4xl">
               Welcome, {user?.full_name || 'Faculty Member'} 👩‍🏫
             </h1>
+<<<<<<< HEAD
             <p className="mt-2 text-slate-400 max-w-xl text-xs leading-relaxed">
+=======
+            <p className="mt-2 text-slate-300 max-w-xl text-sm leading-relaxed">
+>>>>>>> 405336aebf096f4e6de80aca2cdfa7d960f35ea4
               Curate question banks, schedule proctored mock assessments, monitor batch performance, and review student attendance requests.
             </p>
           </div>
@@ -279,9 +315,15 @@ export default function FacultyDashboard() {
             </Link>
             <Link
               href="/faculty/question-banks"
+<<<<<<< HEAD
               className="inline-flex items-center px-4 py-3 bg-slate-900 hover:bg-slate-800 text-white border border-slate-800 font-bold text-xs rounded-xl transition-all"
             >
               <BookOpen className="w-4 h-4 mr-2 text-indigo-400" />
+=======
+              className="inline-flex items-center px-4 py-3 bg-white/10 hover:bg-white/20 text-white border border-white/20 font-bold text-xs rounded-xl transition-all"
+            >
+              <BookOpen className="w-4 h-4 mr-2" />
+>>>>>>> 405336aebf096f4e6de80aca2cdfa7d960f35ea4
               Manage Question Banks
             </Link>
           </div>
@@ -294,6 +336,7 @@ export default function FacultyDashboard() {
         {/* Metric Cards Row */}
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
           
+<<<<<<< HEAD
           <div className="bg-slate-900 border border-slate-800 p-6 rounded-2xl flex items-center space-x-4 shadow-xl">
             <div className="p-3 bg-blue-500/10 text-blue-400 rounded-xl border border-blue-500/15">
               <FileCheck2 className="w-6 h-6" />
@@ -331,11 +374,51 @@ export default function FacultyDashboard() {
             <div>
               <span className="block text-2xl font-black text-white">{pendingAbsenceCount}</span>
               <span className="text-xs text-amber-400 font-bold">Pending Absence Reviews</span>
+=======
+          <div className="bg-white p-6 rounded-2xl border border-slate-200 shadow-sm flex items-center space-x-4">
+            <div className="p-3 bg-blue-50 text-blue-600 rounded-xl">
+              <FileCheck2 className="w-6 h-6" />
+            </div>
+            <div>
+              <span className="block text-2xl font-black text-slate-900">{tests.length}</span>
+              <span className="text-xs text-slate-500 font-medium">Active Assessments</span>
+            </div>
+          </div>
+
+          <div className="bg-white p-6 rounded-2xl border border-slate-200 shadow-sm flex items-center space-x-4">
+            <div className="p-3 bg-indigo-50 text-indigo-600 rounded-xl">
+              <Users className="w-6 h-6" />
+            </div>
+            <div>
+              <span className="block text-2xl font-black text-slate-900">{batches.length}</span>
+              <span className="text-xs text-slate-500 font-medium">Assigned Batches</span>
+            </div>
+          </div>
+
+          <div className="bg-white p-6 rounded-2xl border border-slate-200 shadow-sm flex items-center space-x-4">
+            <div className="p-3 bg-emerald-50 text-emerald-600 rounded-xl">
+              <BookOpen className="w-6 h-6" />
+            </div>
+            <div>
+              <span className="block text-2xl font-black text-slate-900">{questionBanks.length}</span>
+              <span className="text-xs text-slate-500 font-medium">Question Banks</span>
+            </div>
+          </div>
+
+          <Link href="/faculty/attendance" className="bg-white p-6 rounded-2xl border border-slate-200 shadow-sm flex items-center space-x-4 hover:border-amber-400 transition-colors">
+            <div className="p-3 bg-amber-50 text-amber-600 rounded-xl">
+              <CalendarCheck className="w-6 h-6" />
+            </div>
+            <div>
+              <span className="block text-2xl font-black text-slate-900">{pendingAbsenceCount}</span>
+              <span className="text-xs text-amber-600 font-bold">Pending Absence Reviews</span>
+>>>>>>> 405336aebf096f4e6de80aca2cdfa7d960f35ea4
             </div>
           </Link>
 
         </div>
 
+<<<<<<< HEAD
         {/* Analytics Charts Section */}
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
           
@@ -474,10 +557,18 @@ export default function FacultyDashboard() {
           <div className="flex justify-between items-center mb-4 pb-2 border-b border-slate-800">
             <h3 className="text-base font-bold text-white">Batch Readiness & Performance</h3>
             <span className="text-xs text-slate-400 font-medium">Batch Roster View</span>
+=======
+        {/* Assigned Batches Overview */}
+        <div className="bg-white p-6 rounded-2xl border border-slate-200 shadow-sm">
+          <div className="flex justify-between items-center mb-4">
+            <h3 className="text-base font-bold text-slate-900">Batch Readiness & Performance</h3>
+            <span className="text-xs text-slate-500 font-medium">Batch Roster View</span>
+>>>>>>> 405336aebf096f4e6de80aca2cdfa7d960f35ea4
           </div>
 
           <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
             {batches.map((b) => (
+<<<<<<< HEAD
               <div key={b.id} className="p-5 bg-slate-950 border border-slate-800 rounded-2xl space-y-3 relative group overflow-hidden">
                 <div className="flex justify-between items-start">
                   <h4 className="font-bold text-white text-sm">{b.name}</h4>
@@ -490,6 +581,20 @@ export default function FacultyDashboard() {
                   <p>Proctoring Violations Logged: <strong className="text-amber-500">2 low severity</strong></p>
                 </div>
                 <button className="w-full py-2 bg-slate-900 border border-slate-800 hover:border-slate-700 text-slate-300 font-bold text-xs rounded-xl transition-colors">
+=======
+              <div key={b.id} className="p-5 bg-slate-50 rounded-2xl border border-slate-200/80 space-y-3">
+                <div className="flex justify-between items-start">
+                  <h4 className="font-bold text-slate-900 text-sm">{b.name}</h4>
+                  <span className="text-[11px] bg-blue-100 text-blue-700 font-bold px-2 py-0.5 rounded">
+                    {b.student_count || 45} Students
+                  </span>
+                </div>
+                <div className="space-y-1 text-xs text-slate-500">
+                  <p>Average Mock Score: <strong className="text-slate-800">78%</strong></p>
+                  <p>Proctoring Violations Logged: <strong className="text-amber-600">2 low severity</strong></p>
+                </div>
+                <button className="w-full py-2 bg-white border border-slate-200 hover:bg-slate-100 text-slate-700 font-bold text-xs rounded-xl transition-colors">
+>>>>>>> 405336aebf096f4e6de80aca2cdfa7d960f35ea4
                   View Batch Analytics
                 </button>
               </div>

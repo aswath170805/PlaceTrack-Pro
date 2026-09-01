@@ -1,6 +1,10 @@
 'use client';
 
+<<<<<<< HEAD
 import React, { useState, useEffect, useRef } from 'react';
+=======
+import React from 'react';
+>>>>>>> 405336aebf096f4e6de80aca2cdfa7d960f35ea4
 import Link from 'next/link';
 import { usePathname, useRouter } from 'next/navigation';
 import { useAuth } from '@/lib/authContext';
@@ -13,6 +17,10 @@ import {
   CalendarCheck, 
   LogOut, 
   LogIn,
+<<<<<<< HEAD
+=======
+  UserPlus,
+>>>>>>> 405336aebf096f4e6de80aca2cdfa7d960f35ea4
   BookOpen,
   LayoutDashboard
 } from 'lucide-react';
@@ -22,6 +30,7 @@ export default function Navbar() {
   const pathname = usePathname();
   const router = useRouter();
 
+<<<<<<< HEAD
   const [isProfileOpen, setIsProfileOpen] = useState(false);
   const dropdownRef = useRef<HTMLDivElement>(null);
 
@@ -35,6 +44,8 @@ export default function Navbar() {
     return () => document.removeEventListener('mousedown', handleClickOutside);
   }, []);
 
+=======
+>>>>>>> 405336aebf096f4e6de80aca2cdfa7d960f35ea4
   if (
     !user || 
     pathname === '/' || 
@@ -53,9 +64,14 @@ export default function Navbar() {
   };
 
   const handleSignOut = async () => {
+<<<<<<< HEAD
     setIsProfileOpen(false);
     await logout();
     router.replace('/login');
+=======
+    await logout();
+    router.push('/login');
+>>>>>>> 405336aebf096f4e6de80aca2cdfa7d960f35ea4
   };
 
   return (
@@ -166,6 +182,7 @@ export default function Navbar() {
           <div className="flex items-center space-x-3">
             
             {/* Quick Demo Role Switcher */}
+<<<<<<< HEAD
             {role !== 'faculty' ? (
               <div className="flex items-center bg-slate-100 p-1 rounded-xl border border-slate-200">
                 <span className="text-xs font-bold text-slate-500 px-2 uppercase tracking-wider hidden sm:inline">Role:</span>
@@ -258,6 +275,53 @@ export default function Navbar() {
                     </div>
                   </div>
                 )}
+=======
+            <div className="flex items-center bg-slate-100 p-1 rounded-xl border border-slate-200">
+              <span className="text-xs font-bold text-slate-500 px-2 uppercase tracking-wider hidden sm:inline">Role:</span>
+              <button
+                onClick={() => handleRoleChange('student')}
+                className={`px-2.5 py-1 text-xs font-semibold rounded-lg transition-all ${
+                  role === 'student' ? 'bg-white text-blue-700 shadow-sm' : 'text-slate-600 hover:text-slate-900'
+                }`}
+              >
+                Student
+              </button>
+              <button
+                onClick={() => handleRoleChange('faculty')}
+                className={`px-2.5 py-1 text-xs font-semibold rounded-lg transition-all ${
+                  role === 'faculty' ? 'bg-white text-indigo-700 shadow-sm' : 'text-slate-600 hover:text-slate-900'
+                }`}
+              >
+                Faculty
+              </button>
+              <button
+                onClick={() => handleRoleChange('admin')}
+                className={`px-2.5 py-1 text-xs font-semibold rounded-lg transition-all ${
+                  role === 'admin' ? 'bg-white text-amber-700 shadow-sm' : 'text-slate-600 hover:text-slate-900'
+                }`}
+              >
+                Admin
+              </button>
+            </div>
+
+            {/* Auth Buttons or Sign Out */}
+            {user ? (
+              <div className="flex items-center space-x-2 pl-2 border-l border-slate-200">
+                <div className="w-8 h-8 rounded-full bg-gradient-to-tr from-blue-600 to-indigo-600 flex items-center justify-center text-white text-xs font-bold shadow">
+                  {user?.full_name?.charAt(0) || 'U'}
+                </div>
+                <div className="hidden lg:block text-left">
+                  <span className="block text-xs font-semibold text-slate-800 leading-tight">{user?.full_name}</span>
+                  <span className="block text-[10px] text-slate-500 capitalize">{role}</span>
+                </div>
+                <button
+                  onClick={handleSignOut}
+                  title="Sign Out"
+                  className="p-1.5 text-slate-400 hover:text-red-600 hover:bg-red-50 rounded-lg transition-colors ml-1"
+                >
+                  <LogOut className="w-4 h-4" />
+                </button>
+>>>>>>> 405336aebf096f4e6de80aca2cdfa7d960f35ea4
               </div>
             ) : (
               <div className="flex items-center space-x-2">
