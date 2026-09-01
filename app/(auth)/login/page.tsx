@@ -80,14 +80,9 @@ export default function CentralizedLoginPage() {
     }
 
     if (res.success) {
-<<<<<<< HEAD
-      if (res.role === 'admin') router.push('/admin');
-      else if (res.role === 'faculty') router.push('/faculty');
-=======
       const cleanEmail = email.toLowerCase().trim();
       if (cleanEmail === 'placetrackpro@admin.co.in') router.push('/admin');
       else if (cleanEmail.includes('faculty') || cleanEmail.includes('teacher')) router.push('/faculty');
->>>>>>> 405336aebf096f4e6de80aca2cdfa7d960f35ea4
       else router.push('/student');
     } else {
       setErrorMsg(res.error || 'Invalid credentials. Please check your email and password.');

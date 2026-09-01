@@ -31,29 +31,13 @@ export default function StudentDashboard() {
 
   useEffect(() => {
     async function loadStudentData() {
-<<<<<<< HEAD
-      const allTests = await DatabaseService.getTests();
-      
-      const filteredTests = allTests.filter((test) => {
-        const deptMatch = !test.target_department || test.target_department === 'All' || test.target_department === user?.department;
-        const yearMatch = !test.target_year || test.target_year === 'All' || test.target_year === user?.year_of_study;
-        return deptMatch && yearMatch;
-      });
-
-      const [allAttempts, allAnnouncements, allDrives] = await Promise.all([
-=======
       const [allTests, allAttempts, allAnnouncements, allDrives] = await Promise.all([
         DatabaseService.getTests(),
->>>>>>> 405336aebf096f4e6de80aca2cdfa7d960f35ea4
         DatabaseService.getTestAttempts(user?.id),
         DatabaseService.getAnnouncements(),
         DatabaseService.getPlacementDrives()
       ]);
-<<<<<<< HEAD
-      setTests(filteredTests);
-=======
       setTests(allTests);
->>>>>>> 405336aebf096f4e6de80aca2cdfa7d960f35ea4
       setAttempts(allAttempts);
       setAnnouncements(allAnnouncements);
       setDrives(allDrives);

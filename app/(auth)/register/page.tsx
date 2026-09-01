@@ -16,13 +16,8 @@ export default function RegisterPage() {
   const [password, setPassword] = useState<string>('');
   const [fullName, setFullName] = useState<string>('');
   const [role, setRole] = useState<'student' | 'faculty'>('student');
-<<<<<<< HEAD
-  const [department, setDepartment] = useState<string>('CSE');
-  const [yearOfStudy, setYearOfStudy] = useState<string>('4');
-=======
   const [department, setDepartment] = useState<string>('Computer Science');
   const [yearOfStudy, setYearOfStudy] = useState<string>('Final Year');
->>>>>>> 405336aebf096f4e6de80aca2cdfa7d960f35ea4
   const [batchId, setBatchId] = useState<string>('');
   const [batches, setBatches] = useState<Batch[]>([]);
   const [errorMsg, setErrorMsg] = useState<string | null>(null);
@@ -59,16 +54,7 @@ export default function RegisterPage() {
 
     if (res.pendingVerification) {
       setPendingNotice(true);
-<<<<<<< HEAD
-      setErrorMsg(
-        res.error ||
-          (role === 'faculty'
-            ? 'Access request sent to Placement Admin. After they grant access, sign in again to open the Faculty portal.'
-            : 'Registration submitted. After Placement Admin approves, sign in to open the Student portal.')
-      );
-=======
       setErrorMsg('Registration Submitted! Your account is queued for Admin Verification. Access will be granted once verified by Placement Cell.');
->>>>>>> 405336aebf096f4e6de80aca2cdfa7d960f35ea4
     } else if (res.success) {
       if (role === 'faculty') router.push('/faculty');
       else router.push('/student');
@@ -90,19 +76,9 @@ export default function RegisterPage() {
           </div>
         </Link>
 
-<<<<<<< HEAD
-        <h2 className="text-3xl font-black tracking-tight text-white">
-          {role === 'faculty' ? 'Request Faculty Access' : 'Create SVCE Account'}
-        </h2>
-        <p className="mt-2 text-xs text-slate-400">
-          {role === 'faculty'
-            ? 'New faculty accounts are queued for Placement Admin approval. You can sign in only after access is granted.'
-            : 'Register your Student or Teacher account (Must use official @svce.ac.in email)'}
-=======
         <h2 className="text-3xl font-black tracking-tight text-white">Create SVCE Account</h2>
         <p className="mt-2 text-xs text-slate-400">
           Register your Student or Teacher account (Must use official @svce.ac.in email)
->>>>>>> 405336aebf096f4e6de80aca2cdfa7d960f35ea4
         </p>
       </div>
 
@@ -199,19 +175,9 @@ export default function RegisterPage() {
                   onChange={(e) => setDepartment(e.target.value)}
                   className="w-full p-2.5 bg-slate-950 border border-slate-800 rounded-xl text-xs text-white"
                 >
-<<<<<<< HEAD
-                  <option value="AIDS">AIDS</option>
-                  <option value="CSE">CSE</option>
-                  <option value="IT">IT</option>
-                  <option value="ECE">ECE</option>
-                  <option value="EEE">EEE</option>
-                  <option value="MECH">MECH</option>
-                  <option value="BIOTECH">BIOTECH</option>
-=======
                   <option value="Computer Science">Computer Science</option>
                   <option value="Information Technology">Information Tech</option>
                   <option value="Electronics & Comm">Electronics & Comm</option>
->>>>>>> 405336aebf096f4e6de80aca2cdfa7d960f35ea4
                 </select>
               </div>
 
@@ -223,15 +189,8 @@ export default function RegisterPage() {
                     onChange={(e) => setYearOfStudy(e.target.value)}
                     className="w-full p-2.5 bg-slate-950 border border-slate-800 rounded-xl text-xs text-white"
                   >
-<<<<<<< HEAD
-                    <option value="1">1st Year</option>
-                    <option value="2">2nd Year</option>
-                    <option value="3">3rd Year</option>
-                    <option value="4">4th Year (Final)</option>
-=======
                     <option value="Final Year">Final Year (2026)</option>
                     <option value="Pre-Final Year">Pre-Final Year</option>
->>>>>>> 405336aebf096f4e6de80aca2cdfa7d960f35ea4
                   </select>
                 </div>
               )}
@@ -242,36 +201,11 @@ export default function RegisterPage() {
               disabled={isLoading}
               className="w-full py-3 bg-blue-600 hover:bg-blue-500 disabled:opacity-50 text-white font-bold text-xs rounded-xl shadow-lg shadow-blue-600/20 transition-all flex items-center justify-center mt-2"
             >
-<<<<<<< HEAD
-              {isLoading
-                ? 'Submitting request...'
-                : role === 'faculty'
-                  ? 'Send Access Request to Admin'
-                  : 'Submit Registration for Admin Approval'}
-=======
               {isLoading ? 'Registering...' : 'Submit Registration for Admin Approval'}
->>>>>>> 405336aebf096f4e6de80aca2cdfa7d960f35ea4
               <ArrowRight className="w-4 h-4 ml-1.5" />
             </button>
           </form>
 
-<<<<<<< HEAD
-          {pendingNotice && (
-            <div className="mt-4 p-4 rounded-2xl border border-amber-500/30 bg-amber-500/5 text-center space-y-3">
-              <p className="text-xs text-amber-200">
-                Placement Admin will see this request on the User Governance desk. After they click <strong>Grant Access</strong>, come back and sign in.
-              </p>
-              <Link
-                href="/login"
-                className="inline-flex items-center justify-center w-full py-2.5 bg-indigo-600 hover:bg-indigo-500 font-bold text-xs rounded-xl"
-              >
-                Go to Sign In (after admin approval)
-              </Link>
-            </div>
-          )}
-
-=======
->>>>>>> 405336aebf096f4e6de80aca2cdfa7d960f35ea4
           <div className="mt-6 border-t border-slate-800 pt-4 text-center">
             <p className="text-xs text-slate-400">
               Already registered?{' '}

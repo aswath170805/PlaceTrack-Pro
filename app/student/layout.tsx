@@ -1,24 +1,5 @@
 'use client';
 
-<<<<<<< HEAD
-import React, { useEffect } from 'react';
-import { useRouter } from 'next/navigation';
-import { useAuth } from '@/lib/authContext';
-
-export default function StudentLayoutGuard({ children }: { children: React.ReactNode }) {
-  const { user, role } = useAuth();
-  const router = useRouter();
-
-  useEffect(() => {
-    if (!user || role !== 'student' || !user.is_verified) {
-      router.replace('/login');
-    }
-  }, [user, role, router]);
-
-  // Prevent flash of protected UI during redirect
-  if (!user || role !== 'student' || !user.is_verified) {
-    return null;
-=======
 import React from 'react';
 import Link from 'next/link';
 import { useAuth } from '@/lib/authContext';
@@ -63,7 +44,6 @@ export default function StudentLayoutGuard({ children }: { children: React.React
         </div>
       </div>
     );
->>>>>>> 405336aebf096f4e6de80aca2cdfa7d960f35ea4
   }
 
   return <>{children}</>;
