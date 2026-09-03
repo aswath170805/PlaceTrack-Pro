@@ -1,6 +1,6 @@
 'use client';
 
-import React from 'react';
+import React, { useState, useRef, useEffect } from 'react';
 import Link from 'next/link';
 import { usePathname, useRouter } from 'next/navigation';
 import { useAuth } from '@/lib/authContext';
@@ -15,7 +15,13 @@ import {
   LogIn,
   UserPlus,
   BookOpen,
-  LayoutDashboard
+  LayoutDashboard,
+  UserCheck,
+  ChevronDown,
+  Sparkles,
+  Shield,
+  Layers,
+  HelpCircle
 } from 'lucide-react';
 
 export default function Navbar() {
@@ -23,24 +29,41 @@ export default function Navbar() {
   const pathname = usePathname();
   const router = useRouter();
 
+  const [isProfileOpen, setIsProfileOpen] = useState(false);
+  const [showLogoutModal, setShowLogoutModal] = useState(false);
+  const profileRef = useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    function handleClickOutside(event: MouseEvent) {
+      if (profileRef.current && !profileRef.current.contains(event.target as Node)) {
+        setIsProfileOpen(false);
+      }
+    }
+    document.addEventListener('mousedown', handleClickOutside);
+    return () => document.removeEventListener('mousedown', handleClickOutside);
+  }, []);
+
   if (pathname.includes('/student/tests/') && !pathname.includes('/results')) {
     return null;
   }
 
   const handleRoleChange = (newRole: 'student' | 'faculty' | 'admin') => {
     switchRole(newRole);
+    setIsProfileOpen(false);
     if (newRole === 'student') router.push('/student');
     else if (newRole === 'faculty') router.push('/faculty');
     else if (newRole === 'admin') router.push('/admin');
   };
 
-  const handleSignOut = async () => {
+  const confirmLogout = async () => {
+    setShowLogoutModal(false);
+    setIsProfileOpen(false);
     await logout();
     router.push('/login');
   };
 
   return (
-    <header className="sticky top-0 z-50 bg-white/90 backdrop-blur-md border-b border-slate-200">
+    <header className="sticky top-0 z-50 bg-white/95 backdrop-blur-md border-b border-slate-200 shadow-xs">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         <div className="flex justify-between h-16 items-center">
           
@@ -61,21 +84,21 @@ export default function Navbar() {
               <>
                 <Link 
                   href="/student" 
-                  className={`flex items-center px-3 py-2 rounded-lg text-sm font-medium transition-colors ${pathname === '/student' ? 'bg-blue-50 text-blue-600' : 'text-slate-600 hover:bg-slate-50 hover:text-slate-900'}`}
+                  className={`flex items-center px-3 py-2 rounded-lg text-sm font-medium transition-colors ${pathname === '/student' ? 'bg-blue-50 text-blue-600 font-bold' : 'text-slate-600 hover:bg-slate-50 hover:text-slate-900'}`}
                 >
                   <LayoutDashboard className="w-4 h-4 mr-2" />
                   Dashboard
                 </Link>
                 <Link 
                   href="/student/analytics" 
-                  className={`flex items-center px-3 py-2 rounded-lg text-sm font-medium transition-colors ${pathname.includes('/analytics') ? 'bg-blue-50 text-blue-600' : 'text-slate-600 hover:bg-slate-50 hover:text-slate-900'}`}
+                  className={`flex items-center px-3 py-2 rounded-lg text-sm font-medium transition-colors ${pathname.includes('/analytics') ? 'bg-blue-50 text-blue-600 font-bold' : 'text-slate-600 hover:bg-slate-50 hover:text-slate-900'}`}
                 >
                   <BarChart3 className="w-4 h-4 mr-2" />
                   Performance AI
                 </Link>
                 <Link 
                   href="/student/attendance" 
-                  className={`flex items-center px-3 py-2 rounded-lg text-sm font-medium transition-colors ${pathname.includes('/attendance') ? 'bg-blue-50 text-blue-600' : 'text-slate-600 hover:bg-slate-50 hover:text-slate-900'}`}
+                  className={`flex items-center px-3 py-2 rounded-lg text-sm font-medium transition-colors ${pathname.includes('/attendance') ? 'bg-blue-50 text-blue-600 font-bold' : 'text-slate-600 hover:bg-slate-50 hover:text-slate-900'}`}
                 >
                   <CalendarCheck className="w-4 h-4 mr-2" />
                   Attendance
@@ -87,21 +110,21 @@ export default function Navbar() {
               <>
                 <Link 
                   href="/faculty" 
-                  className={`flex items-center px-3 py-2 rounded-lg text-sm font-medium transition-colors ${pathname === '/faculty' ? 'bg-blue-50 text-blue-600' : 'text-slate-600 hover:bg-slate-50 hover:text-slate-900'}`}
+                  className={`flex items-center px-3 py-2 rounded-lg text-sm font-medium transition-colors ${pathname === '/faculty' ? 'bg-indigo-50 text-indigo-700 font-bold' : 'text-slate-600 hover:bg-slate-50 hover:text-slate-900'}`}
                 >
                   <LayoutDashboard className="w-4 h-4 mr-2" />
                   Faculty Hub
                 </Link>
                 <Link 
                   href="/faculty/question-banks" 
-                  className={`flex items-center px-3 py-2 rounded-lg text-sm font-medium transition-colors ${pathname.includes('/question-banks') ? 'bg-blue-50 text-blue-600' : 'text-slate-600 hover:bg-slate-50 hover:text-slate-900'}`}
+                  className={`flex items-center px-3 py-2 rounded-lg text-sm font-medium transition-colors ${pathname.includes('/question-banks') ? 'bg-indigo-50 text-indigo-700 font-bold' : 'text-slate-600 hover:bg-slate-50 hover:text-slate-900'}`}
                 >
                   <BookOpen className="w-4 h-4 mr-2" />
-                  Question Banks
+                  Question Banks & Authoring
                 </Link>
                 <Link 
                   href="/faculty/attendance" 
-                  className={`flex items-center px-3 py-2 rounded-lg text-sm font-medium transition-colors ${pathname.includes('/faculty/attendance') ? 'bg-blue-50 text-blue-600' : 'text-slate-600 hover:bg-slate-50 hover:text-slate-900'}`}
+                  className={`flex items-center px-3 py-2 rounded-lg text-sm font-medium transition-colors ${pathname.includes('/faculty/attendance') ? 'bg-indigo-50 text-indigo-700 font-bold' : 'text-slate-600 hover:bg-slate-50 hover:text-slate-900'}`}
                 >
                   <CalendarCheck className="w-4 h-4 mr-2" />
                   Absence Review
@@ -113,28 +136,28 @@ export default function Navbar() {
               <>
                 <Link 
                   href="/admin" 
-                  className={`flex items-center px-3 py-2 rounded-lg text-sm font-medium transition-colors ${pathname === '/admin' ? 'bg-blue-50 text-blue-600' : 'text-slate-600 hover:bg-slate-50 hover:text-slate-900'}`}
+                  className={`flex items-center px-3 py-2 rounded-lg text-sm font-medium transition-colors ${pathname === '/admin' ? 'bg-amber-50 text-amber-700 font-bold' : 'text-slate-600 hover:bg-slate-50 hover:text-slate-900'}`}
                 >
                   <LayoutDashboard className="w-4 h-4 mr-2" />
                   Overview
                 </Link>
                 <Link 
                   href="/admin/proctoring" 
-                  className={`flex items-center px-3 py-2 rounded-lg text-sm font-medium transition-colors ${pathname.includes('/proctoring') ? 'bg-amber-50 text-amber-600 font-semibold' : 'text-slate-600 hover:bg-slate-50 hover:text-slate-900'}`}
+                  className={`flex items-center px-3 py-2 rounded-lg text-sm font-medium transition-colors ${pathname.includes('/proctoring') ? 'bg-amber-50 text-amber-600 font-bold' : 'text-slate-600 hover:bg-slate-50 hover:text-slate-900'}`}
                 >
                   <ShieldAlert className="w-4 h-4 mr-2 text-amber-500 animate-pulse" />
                   Live Proctoring
                 </Link>
                 <Link 
                   href="/admin/users" 
-                  className={`flex items-center px-3 py-2 rounded-lg text-sm font-medium transition-colors ${pathname.includes('/users') ? 'bg-blue-50 text-blue-600' : 'text-slate-600 hover:bg-slate-50 hover:text-slate-900'}`}
+                  className={`flex items-center px-3 py-2 rounded-lg text-sm font-medium transition-colors ${pathname.includes('/users') ? 'bg-blue-50 text-blue-600 font-bold' : 'text-slate-600 hover:bg-slate-50 hover:text-slate-900'}`}
                 >
                   <Users className="w-4 h-4 mr-2" />
-                  User & Batches
+                  Users & Batches
                 </Link>
                 <Link 
                   href="/admin/audit-logs" 
-                  className={`flex items-center px-3 py-2 rounded-lg text-sm font-medium transition-colors ${pathname.includes('/audit-logs') ? 'bg-blue-50 text-blue-600' : 'text-slate-600 hover:bg-slate-50 hover:text-slate-900'}`}
+                  className={`flex items-center px-3 py-2 rounded-lg text-sm font-medium transition-colors ${pathname.includes('/audit-logs') ? 'bg-blue-50 text-blue-600 font-bold' : 'text-slate-600 hover:bg-slate-50 hover:text-slate-900'}`}
                 >
                   <FileText className="w-4 h-4 mr-2" />
                   Audit Logs
@@ -143,55 +166,115 @@ export default function Navbar() {
             )}
           </nav>
 
-          {/* User Status / Role Switcher / Auth Buttons */}
+          {/* Right Header Controls: Current Role Badge & Interactive Profile Dropdown */}
           <div className="flex items-center space-x-3">
             
-            {/* Quick Demo Role Switcher */}
-            <div className="flex items-center bg-slate-100 p-1 rounded-xl border border-slate-200">
-              <span className="text-xs font-bold text-slate-500 px-2 uppercase tracking-wider hidden sm:inline">Role:</span>
-              <button
-                onClick={() => handleRoleChange('student')}
-                className={`px-2.5 py-1 text-xs font-semibold rounded-lg transition-all ${
-                  role === 'student' ? 'bg-white text-blue-700 shadow-sm' : 'text-slate-600 hover:text-slate-900'
-                }`}
-              >
-                Student
-              </button>
-              <button
-                onClick={() => handleRoleChange('faculty')}
-                className={`px-2.5 py-1 text-xs font-semibold rounded-lg transition-all ${
-                  role === 'faculty' ? 'bg-white text-indigo-700 shadow-sm' : 'text-slate-600 hover:text-slate-900'
-                }`}
-              >
-                Faculty
-              </button>
-              <button
-                onClick={() => handleRoleChange('admin')}
-                className={`px-2.5 py-1 text-xs font-semibold rounded-lg transition-all ${
-                  role === 'admin' ? 'bg-white text-amber-700 shadow-sm' : 'text-slate-600 hover:text-slate-900'
-                }`}
-              >
-                Admin
-              </button>
+            {/* Active Role Pill Badge */}
+            <div className={`px-3 py-1 rounded-full text-xs font-bold uppercase tracking-wider flex items-center space-x-1.5 shadow-xs border ${
+              role === 'faculty' 
+                ? 'bg-indigo-50 text-indigo-700 border-indigo-200' 
+                : role === 'admin'
+                ? 'bg-amber-50 text-amber-700 border-amber-200'
+                : 'bg-blue-50 text-blue-700 border-blue-200'
+            }`}>
+              <span className={`w-2 h-2 rounded-full ${
+                role === 'faculty' ? 'bg-indigo-600' : role === 'admin' ? 'bg-amber-500' : 'bg-blue-600'
+              }`} />
+              <span>ROLE: {role}</span>
             </div>
 
-            {/* Auth Buttons or Sign Out */}
+            {/* User Profile Avatar with Clickable Modal Dropdown */}
             {user ? (
-              <div className="flex items-center space-x-2 pl-2 border-l border-slate-200">
-                <div className="w-8 h-8 rounded-full bg-gradient-to-tr from-blue-600 to-indigo-600 flex items-center justify-center text-white text-xs font-bold shadow">
-                  {user?.full_name?.charAt(0) || 'U'}
-                </div>
-                <div className="hidden lg:block text-left">
-                  <span className="block text-xs font-semibold text-slate-800 leading-tight">{user?.full_name}</span>
-                  <span className="block text-[10px] text-slate-500 capitalize">{role}</span>
-                </div>
+              <div className="relative" ref={profileRef}>
                 <button
-                  onClick={handleSignOut}
-                  title="Sign Out"
-                  className="p-1.5 text-slate-400 hover:text-red-600 hover:bg-red-50 rounded-lg transition-colors ml-1"
+                  onClick={() => setIsProfileOpen(!isProfileOpen)}
+                  className="flex items-center space-x-2 p-1.5 rounded-xl hover:bg-slate-100 transition-all border border-slate-200 shadow-xs"
                 >
-                  <LogOut className="w-4 h-4" />
+                  <div className={`w-8 h-8 rounded-lg flex items-center justify-center text-white text-xs font-black shadow-sm ${
+                    role === 'faculty' ? 'bg-indigo-600' : role === 'admin' ? 'bg-amber-600' : 'bg-blue-600'
+                  }`}>
+                    {user?.full_name?.charAt(0) || 'U'}
+                  </div>
+                  <div className="hidden sm:block text-left pr-1">
+                    <span className="block text-xs font-bold text-slate-800 leading-tight max-w-[120px] truncate">{user?.full_name}</span>
+                    <span className="block text-[10px] text-slate-400 capitalize font-medium">{role}</span>
+                  </div>
+                  <ChevronDown className="w-3.5 h-3.5 text-slate-400" />
                 </button>
+
+                {/* Profile Modal Dropdown */}
+                {isProfileOpen && (
+                  <div className="absolute right-0 mt-2 w-64 bg-white rounded-2xl border border-slate-200 shadow-2xl py-2 z-50 animate-in fade-in slide-in-from-top-2 duration-150">
+                    <div className="px-4 py-3 border-b border-slate-100 bg-slate-50/50">
+                      <p className="text-xs font-bold text-slate-900">{user?.full_name}</p>
+                      <p className="text-[11px] text-slate-500 truncate">{user?.email}</p>
+                      <div className="mt-2 inline-flex items-center px-2 py-0.5 rounded-md text-[10px] font-black uppercase tracking-wider bg-slate-200 text-slate-700">
+                        Current Role: {role}
+                      </div>
+                    </div>
+
+                    {/* Change Role Section */}
+                    <div className="px-3 py-2 border-b border-slate-100">
+                      <span className="block text-[10px] font-bold text-slate-400 uppercase tracking-wider mb-2 px-1">
+                        Switch Workspace Role
+                      </span>
+                      <div className="space-y-1">
+                        <button
+                          onClick={() => handleRoleChange('student')}
+                          className={`w-full text-left px-3 py-2 rounded-xl text-xs font-semibold flex items-center justify-between transition-colors ${
+                            role === 'student' ? 'bg-blue-50 text-blue-700 font-bold' : 'text-slate-600 hover:bg-slate-50'
+                          }`}
+                        >
+                          <div className="flex items-center">
+                            <GraduationCap className="w-4 h-4 mr-2 text-blue-600" />
+                            <span>Student Portal</span>
+                          </div>
+                          {role === 'student' && <span className="text-[10px] bg-blue-200 text-blue-800 px-1.5 py-0.5 rounded font-bold">Active</span>}
+                        </button>
+
+                        <button
+                          onClick={() => handleRoleChange('faculty')}
+                          className={`w-full text-left px-3 py-2 rounded-xl text-xs font-semibold flex items-center justify-between transition-colors ${
+                            role === 'faculty' ? 'bg-indigo-50 text-indigo-700 font-bold' : 'text-slate-600 hover:bg-slate-50'
+                          }`}
+                        >
+                          <div className="flex items-center">
+                            <BookOpen className="w-4 h-4 mr-2 text-indigo-600" />
+                            <span>Faculty Hub</span>
+                          </div>
+                          {role === 'faculty' && <span className="text-[10px] bg-indigo-200 text-indigo-800 px-1.5 py-0.5 rounded font-bold">Active</span>}
+                        </button>
+
+                        <button
+                          onClick={() => handleRoleChange('admin')}
+                          className={`w-full text-left px-3 py-2 rounded-xl text-xs font-semibold flex items-center justify-between transition-colors ${
+                            role === 'admin' ? 'bg-amber-50 text-amber-700 font-bold' : 'text-slate-600 hover:bg-slate-50'
+                          }`}
+                        >
+                          <div className="flex items-center">
+                            <Shield className="w-4 h-4 mr-2 text-amber-600" />
+                            <span>Admin Center</span>
+                          </div>
+                          {role === 'admin' && <span className="text-[10px] bg-amber-200 text-amber-800 px-1.5 py-0.5 rounded font-bold">Active</span>}
+                        </button>
+                      </div>
+                    </div>
+
+                    {/* Logout Trigger */}
+                    <div className="p-2">
+                      <button
+                        onClick={() => {
+                          setIsProfileOpen(false);
+                          setShowLogoutModal(true);
+                        }}
+                        className="w-full text-left px-3 py-2 rounded-xl text-xs font-bold text-red-600 hover:bg-red-50 transition-colors flex items-center"
+                      >
+                        <LogOut className="w-4 h-4 mr-2 text-red-500" />
+                        Log Out of Account
+                      </button>
+                    </div>
+                  </div>
+                )}
               </div>
             ) : (
               <div className="flex items-center space-x-2">
@@ -215,6 +298,39 @@ export default function Navbar() {
 
         </div>
       </div>
+
+      {/* Confirmation Logout Modal */}
+      {showLogoutModal && (
+        <div className="fixed inset-0 bg-slate-900/60 backdrop-blur-xs flex items-center justify-center z-50 p-4">
+          <div className="bg-white rounded-3xl max-w-sm w-full p-6 text-center space-y-4 shadow-2xl border border-slate-200">
+            <div className="w-12 h-12 bg-red-100 text-red-600 rounded-2xl flex items-center justify-center mx-auto shadow-inner">
+              <LogOut className="w-6 h-6" />
+            </div>
+            <div>
+              <h3 className="text-base font-black text-slate-900">Sign Out Confirmation</h3>
+              <p className="text-xs text-slate-500 mt-1">
+                Are you sure you want to log out? You will be redirected to the sign-in page.
+              </p>
+            </div>
+            <div className="flex space-x-3 pt-2">
+              <button
+                type="button"
+                onClick={() => setShowLogoutModal(false)}
+                className="flex-1 py-2.5 bg-slate-100 hover:bg-slate-200 text-slate-700 font-bold text-xs rounded-xl transition-colors"
+              >
+                Stay Logged In
+              </button>
+              <button
+                type="button"
+                onClick={confirmLogout}
+                className="flex-1 py-2.5 bg-red-600 hover:bg-red-700 text-white font-bold text-xs rounded-xl shadow-md transition-colors"
+              >
+                Yes, Sign Out
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </header>
   );
 }

@@ -1,10 +1,13 @@
 export interface Profile {
   id: string;
   full_name: string;
+  email?: string;
   role: 'student' | 'faculty' | 'admin';
   department: string;
   year_of_study: string;
   batch_id?: string;
+  is_verified?: boolean;
+  avatar_url?: string;
   created_at: string;
 }
 
@@ -35,7 +38,7 @@ export interface Question {
     correctAnswer?: string | number;
     explanation?: string;
     starterCode?: string;
-    testCases?: { input: string; expectedOutput: string }[];
+    testCases?: { input: string; expectedOutput: string; isPublic?: boolean }[];
   };
   created_at: string;
 }
@@ -134,6 +137,7 @@ export const MOCK_PROFILES: Profile[] = [
     role: 'faculty',
     department: 'Computer Science',
     year_of_study: 'N/A',
+    is_verified: true,
     created_at: new Date().toISOString(),
   },
   {
@@ -188,11 +192,13 @@ export const MOCK_QUESTIONS: Question[] = [
     topic: 'Data Structures',
     difficulty: 'medium',
     content: {
-      questionText: 'Write a function `twoSum(nums, target)` that returns indices of the two numbers such that they add up to target.',
-      starterCode: 'function twoSum(nums, target) {\n  // Write your code here\n  \n}',
+      questionText: 'Write a function `twoSum(nums, target)` that returns indices of the two numbers such that they add up to target. (e.g., input: `[2,7,11,15], 9` -> returns `[0, 1]`)',
+      starterCode: 'function twoSum(nums, target) {\n  const map = new Map();\n  for (let i = 0; i < nums.length; i++) {\n    const complement = target - nums[i];\n    if (map.has(complement)) {\n      return [map.get(complement), i];\n    }\n    map.set(nums[i], i);\n  }\n  return [];\n}',
       testCases: [
-        { input: 'nums = [2,7,11,15], target = 9', expectedOutput: '[0, 1]' },
-        { input: 'nums = [3,2,4], target = 6', expectedOutput: '[1, 2]' },
+        { input: '[2,7,11,15], 9', expectedOutput: '[0, 1]', isPublic: true },
+        { input: '[3,2,4], 6', expectedOutput: '[1, 2]', isPublic: true },
+        { input: '[3,3], 6', expectedOutput: '[0, 1]', isPublic: false },
+        { input: '[1,5,8,3], 11', expectedOutput: '[2, 3]', isPublic: false },
       ],
       explanation: 'Use a hash map to store complements (target - num) and their indices in a single pass O(n) time complexity.',
     },
