@@ -1,8 +1,10 @@
 'use client';
 
 import React, { useState, useEffect } from 'react';
-import { ProctoringEvent } from '@/lib/mockData';
-import { DatabaseService } from '@/lib/dbService';
+import { 
+  MOCK_PROCTORING_EVENTS, 
+  ProctoringEvent 
+} from '@/lib/mockData';
 import { 
   ShieldAlert, 
   Eye, 
@@ -16,17 +18,9 @@ import {
 } from 'lucide-react';
 
 export default function LiveProctoringDashboard() {
-  const [events, setEvents] = useState<ProctoringEvent[]>([]);
+  const [events, setEvents] = useState<ProctoringEvent[]>(MOCK_PROCTORING_EVENTS);
   const [severityFilter, setSeverityFilter] = useState<string>('all');
   const [selectedSnapshot, setSelectedSnapshot] = useState<ProctoringEvent | null>(null);
-
-  useEffect(() => {
-    async function loadEvents() {
-      const data = await DatabaseService.getProctoringEvents();
-      setEvents(data);
-    }
-    loadEvents();
-  }, []);
 
   // Simulated Supabase Realtime event feed
   useEffect(() => {

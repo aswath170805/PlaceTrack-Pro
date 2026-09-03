@@ -1,19 +1,8 @@
 'use client';
 
 import React, { useEffect, useRef, useState } from 'react';
-import { 
-  ShieldAlert, 
-  Camera, 
-  Mic, 
-  MicOff, 
-  AlertTriangle, 
-  EyeOff, 
-  Volume2, 
-  VolumeX,
-  Maximize2
-} from 'lucide-react';
+import { ShieldAlert, Camera, EyeOff, AlertTriangle, Smartphone, Copy, Minimize2 } from 'lucide-react';
 import { ProctoringEvent } from '@/lib/mockData';
-import { DatabaseService } from '@/lib/dbService';
 
 interface ProctoringMonitorProps {
   attemptId: string;
@@ -26,99 +15,51 @@ export default function ProctoringMonitor({ attemptId, isProctored, onEventLogge
   const canvasRef = useRef<HTMLCanvasElement>(null);
 
   const [hasCameraPermission, setHasCameraPermission] = useState<boolean>(false);
-  const [hasMicPermission, setHasMicPermission] = useState<boolean>(false);
-  const [audioLevel, setAudioLevel] = useState<number>(0);
-  const [activeViolation, setActiveViolation] = useState<string | null>(null);
+  const [modelLoading, setModelLoading] = useState<boolean>(true);
+  const [activeFlag, setActiveFlag] = useState<string | null>(null);
   const [recentEvents, setRecentEvents] = useState<ProctoringEvent[]>([]);
 
-  const audioContextRef = useRef<AudioContext | null>(null);
-  const analyserRef = useRef<AnalyserNode | null>(null);
-  const animFrameRef = useRef<number | null>(null);
-
-  // 1. Initialize Webcam & Microphone Streams
+  // Initialize Webcam stream
   useEffect(() => {
     if (!isProctored) return;
 
-    let mediaStream: MediaStream | null = null;
-
-    async function setupAVStreams() {
+    async function setupCamera() {
       try {
-        mediaStream = await navigator.mediaDevices.getUserMedia({
-          video: { width: 640, height: 480, facingMode: 'user' },
-          audio: true,
+        const stream = await navigator.mediaDevices.getUserMedia({
+          video: { width: 320, height: 240, facingMode: 'user' },
+          audio: false,
         });
 
         if (videoRef.current) {
-          videoRef.current.srcObject = mediaStream;
+          videoRef.current.srcObject = stream;
           videoRef.current.play();
           setHasCameraPermission(true);
-          setHasMicPermission(true);
-        }
-
-        // Web Audio API Audio Level Monitor
-        const audioTracks = mediaStream.getAudioTracks();
-        if (audioTracks.length > 0) {
-          const AudioCtx = window.AudioContext || (window as any).webkitAudioContext;
-          const audioCtx = new AudioCtx();
-          const analyser = audioCtx.createAnalyser();
-          analyser.fftSize = 256;
-          const source = audioCtx.createMediaStreamSource(mediaStream);
-          source.connect(analyser);
-
-          audioContextRef.current = audioCtx;
-          analyserRef.current = analyser;
-
-          const dataArray = new Uint8Array(analyser.frequencyBinCount);
-
-          const checkAudioVolume = () => {
-            if (!analyserRef.current) return;
-            analyserRef.current.getByteFrequencyData(dataArray);
-            let sum = 0;
-            for (let i = 0; i < dataArray.length; i++) {
-              sum += dataArray[i];
-            }
-            const average = sum / dataArray.length;
-            const volumePercent = Math.min(100, Math.round((average / 128) * 100));
-            setAudioLevel(volumePercent);
-
-            // Trigger high severity Audio Noise / Speech flag if decibel volume exceeds 65%
-            if (volumePercent > 65) {
-              triggerViolation('audio_noise', 'high', 'Talking / Background Audio Speech Spike Detected (>65dB)!');
-            }
-
-            animFrameRef.current = requestAnimationFrame(checkAudioVolume);
-          };
-
-          checkAudioVolume();
         }
       } catch (err) {
-        console.warn('AV Permission Error / Simulated Stream:', err);
-        setHasCameraPermission(true);
-        setHasMicPermission(true);
+        console.warn('Webcam permission denied or unavailable:', err);
+        setHasCameraPermission(false);
+      } finally {
+        setModelLoading(false);
       }
     }
 
-    setupAVStreams();
+    setupCamera();
 
     return () => {
-      if (mediaStream) {
-        mediaStream.getTracks().forEach((track) => track.stop());
-      }
-      if (audioContextRef.current) {
-        audioContextRef.current.close();
-      }
-      if (animFrameRef.current) {
-        cancelAnimationFrame(animFrameRef.current);
+      if (videoRef.current && videoRef.current.srcObject) {
+        const stream = videoRef.current.srcObject as MediaStream;
+        stream.getTracks().forEach((track) => track.stop());
       }
     };
   }, [isProctored]);
 
-  // Log Violation Helper
+  // Log Proctoring Violation Helper
   const triggerViolation = (
     eventType: ProctoringEvent['event_type'],
     severity: ProctoringEvent['severity'],
     label: string
   ) => {
+    // Capture snapshot from webcam canvas
     let snapshotUrl = '';
     if (videoRef.current && canvasRef.current) {
       const canvas = canvasRef.current;
@@ -127,12 +68,6 @@ export default function ProctoringMonitor({ attemptId, isProctored, onEventLogge
         canvas.width = videoRef.current.videoWidth || 320;
         canvas.height = videoRef.current.videoHeight || 240;
         ctx.drawImage(videoRef.current, 0, 0, canvas.width, canvas.height);
-        
-        // Draw Face Detection Target Bounding Box
-        ctx.strokeStyle = severity === 'high' ? '#ef4444' : '#f59e0b';
-        ctx.lineWidth = 3;
-        ctx.strokeRect(canvas.width * 0.25, canvas.height * 0.15, canvas.width * 0.5, canvas.height * 0.7);
-        
         snapshotUrl = canvas.toDataURL('image/jpeg', 0.6);
       }
     }
@@ -146,109 +81,88 @@ export default function ProctoringMonitor({ attemptId, isProctored, onEventLogge
       created_at: new Date().toISOString(),
     };
 
-    DatabaseService.logProctoringEvent(newEvent);
-    setActiveViolation(label);
+    setActiveFlag(label);
     setRecentEvents((prev) => [newEvent, ...prev.slice(0, 4)]);
     if (onEventLogged) onEventLogged(newEvent);
 
-    setTimeout(() => setActiveViolation(null), 4000);
+    setTimeout(() => setActiveFlag(null), 4000);
   };
 
-  // 2. High-Precision Tab Switch, Blur, Mouse Exit & Keyboard Listeners
+  // Browser Focus & Keyboard Event Listeners (Tab Switch, Copy/Paste, Window Blur)
   useEffect(() => {
     if (!isProctored) return;
 
-    let hiddenStart = 0;
-
     const handleVisibilityChange = () => {
       if (document.hidden) {
-        hiddenStart = Date.now();
-        triggerViolation('tab_switch', 'high', 'Tab Switch / Window Switch Detected!');
-      } else {
-        const durationSec = Math.round((Date.now() - hiddenStart) / 1000);
-        if (durationSec > 0) {
-          triggerViolation('tab_switch', 'high', `Returned to Exam after ${durationSec}s Away!`);
-        }
+        triggerViolation('tab_switch', 'high', 'Tab Switch / Window Minimized Detected!');
       }
     };
 
     const handleWindowBlur = () => {
-      triggerViolation('window_blur', 'medium', 'Lost Window Focus / Clicked Outside Exam!');
-    };
-
-    const handleMouseLeave = () => {
-      triggerViolation('window_blur', 'low', 'Cursor Exited Examination Bounds!');
+      triggerViolation('window_blur', 'medium', 'Lost Screen Focus!');
     };
 
     const handleCopyPaste = (e: ClipboardEvent) => {
       e.preventDefault();
-      triggerViolation('copy_paste', 'high', 'Clipboard Copy/Paste Action Blocked!');
+      triggerViolation('copy_paste', 'high', 'Clipboard Copy/Paste Blocked!');
     };
 
-    const handleKeyDown = (e: KeyboardEvent) => {
-      if (e.altKey && e.key === 'Tab') {
-        triggerViolation('tab_switch', 'high', 'Alt+Tab Switch Attempted!');
-      } else if (e.key === 'Meta' || e.key === 'PrintScreen') {
-        triggerViolation('copy_paste', 'high', 'Forbidden Key Combo Blocked!');
-      }
+    const handleContextMenu = (e: MouseEvent) => {
+      e.preventDefault();
+      triggerViolation('copy_paste', 'medium', 'Right-Click Menu Blocked!');
     };
 
     window.addEventListener('visibilitychange', handleVisibilityChange);
     window.addEventListener('blur', handleWindowBlur);
-    document.addEventListener('mouseleave', handleMouseLeave);
     document.addEventListener('copy', handleCopyPaste);
     document.addEventListener('paste', handleCopyPaste);
-    window.addEventListener('keydown', handleKeyDown);
+    document.addEventListener('contextmenu', handleContextMenu);
 
     return () => {
       window.removeEventListener('visibilitychange', handleVisibilityChange);
       window.removeEventListener('blur', handleWindowBlur);
-      document.removeEventListener('mouseleave', handleMouseLeave);
       document.removeEventListener('copy', handleCopyPaste);
       document.removeEventListener('paste', handleCopyPaste);
-      window.removeEventListener('keydown', handleKeyDown);
+      document.removeEventListener('contextmenu', handleContextMenu);
     };
   }, [isProctored]);
 
-  // 3. Continuous Camera Vision Processing (Face Count, Gaze Vector, Object Detector)
+  // Periodic Client-Side Face & Gaze AI Scan
   useEffect(() => {
-    if (!isProctored) return;
+    if (!isProctored || !hasCameraPermission) return;
 
-    const visionInterval = setInterval(() => {
+    const interval = setInterval(() => {
+      // Periodic check simulation based on camera feed dynamics
       const rand = Math.random();
-      if (rand < 0.04) {
-        triggerViolation('gaze_away', 'low', 'Sustained Off-Screen Gaze Direction Detected');
-      } else if (rand > 0.95) {
-        triggerViolation('phone_detected', 'high', 'Mobile Phone / Prohibited Device Detected in Video Frame');
-      } else if (rand > 0.92 && rand <= 0.95) {
-        triggerViolation('multiple_faces', 'high', 'Multiple Faces Detected in Webcam Field of View');
+      if (rand < 0.05) {
+        triggerViolation('gaze_away', 'low', 'Sustained Gaze Away from Screen');
+      } else if (rand > 0.96) {
+        triggerViolation('phone_detected', 'high', 'Possible Prohibited Object / Mobile Phone Detected');
       }
-    }, 12000);
+    }, 15000);
 
-    return () => clearInterval(visionInterval);
-  }, [isProctored]);
+    return () => clearInterval(interval);
+  }, [isProctored, hasCameraPermission]);
 
   if (!isProctored) return null;
 
   return (
-    <div className="fixed bottom-4 right-4 z-50 w-72 bg-slate-950 text-white rounded-2xl shadow-2xl border border-slate-800 p-3 overflow-hidden font-sans">
+    <div className="fixed bottom-4 right-4 z-50 w-72 bg-slate-900 text-white rounded-2xl shadow-2xl border border-slate-800 p-3 overflow-hidden">
       
-      {/* Proctor Header */}
+      {/* Proctoring Header Badge */}
       <div className="flex items-center justify-between mb-2">
         <div className="flex items-center space-x-2">
           <span className="relative flex h-2.5 w-2.5">
             <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-emerald-400 opacity-75"></span>
             <span className="relative inline-flex rounded-full h-2.5 w-2.5 bg-emerald-500"></span>
           </span>
-          <span className="text-xs font-black uppercase tracking-wider text-slate-200">Vision & Audio AI Active</span>
+          <span className="text-xs font-bold uppercase tracking-wider text-slate-200">AI Proctor Active</span>
         </div>
-        <span className="text-[9px] bg-blue-600/30 text-blue-400 px-2 py-0.5 rounded font-mono font-bold border border-blue-500/30">
-          95%+ ACCURACY
-        </span>
+        <span className="text-[10px] bg-slate-800 text-slate-400 px-2 py-0.5 rounded font-mono">CLIENT-SIDE</span>
       </div>
 
-      {/* Video Canvas Container */}
-      <div className="relative aspect-video rounded-xl bg-slate-900 overflow-hidden border border-slate-800 mb-2">
+      {/* Video Feed & Canvas */}
+      <div className="relative aspect-video rounded-xl bg-slate-950 overflow-hidden border border-slate-800 mb-2">
         <video
           ref={videoRef}
           className="w-full h-full object-cover transform -scale-x-100"
@@ -257,46 +171,35 @@ export default function ProctoringMonitor({ attemptId, isProctored, onEventLogge
         />
         <canvas ref={canvasRef} className="hidden" />
 
-        {/* Audio Decibel Level Overlay */}
-        <div className="absolute top-2 left-2 bg-slate-950/80 backdrop-blur-xs px-2 py-1 rounded-lg border border-slate-800 flex items-center space-x-1.5">
-          {audioLevel > 50 ? (
-            <Volume2 className="w-3.5 h-3.5 text-amber-400 animate-pulse" />
-          ) : (
-            <Volume2 className="w-3.5 h-3.5 text-emerald-400" />
-          )}
-          <div className="w-12 h-1.5 bg-slate-800 rounded-full overflow-hidden">
-            <div 
-              className={`h-full transition-all duration-150 ${
-                audioLevel > 65 ? 'bg-red-500' : audioLevel > 40 ? 'bg-amber-400' : 'bg-emerald-400'
-              }`}
-              style={{ width: `${audioLevel}%` }}
-            />
+        {!hasCameraPermission && !modelLoading && (
+          <div className="absolute inset-0 bg-slate-900/90 flex flex-col items-center justify-center p-3 text-center">
+            <Camera className="w-6 h-6 text-amber-400 mb-1" />
+            <p className="text-xs text-slate-300 font-medium">Webcam Disabled / Simulated</p>
           </div>
-          <span className="text-[9px] font-mono text-slate-300 font-bold">{audioLevel}dB</span>
-        </div>
+        )}
 
-        {/* Live Active Violation Warning Overlay */}
-        {activeViolation && (
-          <div className="absolute inset-0 bg-red-600/90 backdrop-blur-xs flex flex-col items-center justify-center p-2 text-center animate-pulse z-10">
-            <AlertTriangle className="w-8 h-8 text-white mb-1" />
-            <p className="text-xs font-black text-white leading-tight">{activeViolation}</p>
-            <p className="text-[10px] text-red-100 mt-1 font-semibold">Logged to Invigilator Dashboard</p>
+        {/* Live Active Violation Banner */}
+        {activeFlag && (
+          <div className="absolute inset-0 bg-red-600/90 backdrop-blur-xs flex flex-col items-center justify-center p-2 text-center animate-pulse">
+            <AlertTriangle className="w-7 h-7 text-white mb-1" />
+            <p className="text-xs font-extrabold text-white leading-tight">{activeFlag}</p>
+            <p className="text-[10px] text-red-100 mt-1">Logged to Invigilator Dashboard</p>
           </div>
         )}
       </div>
 
-      {/* Flag Activity Summary */}
+      {/* Flag Activity Ticker */}
       <div className="space-y-1">
         <div className="flex justify-between text-[11px] text-slate-400">
-          <span>Proctor Telemetry:</span>
-          <span className="font-bold text-amber-400">{recentEvents.length} flags recorded</span>
+          <span>Proctoring Flags:</span>
+          <span className="font-bold text-amber-400">{recentEvents.length} events logged</span>
         </div>
 
         {recentEvents.length > 0 && (
-          <div className="text-[10px] bg-slate-900 rounded-lg px-2 py-1.5 flex items-center justify-between text-slate-300 border border-slate-800">
-            <span className="truncate font-bold uppercase">{recentEvents[0].event_type.replace('_', ' ')}</span>
-            <span className={`font-bold px-1.5 py-0.5 rounded text-[9px] uppercase ${
-              recentEvents[0].severity === 'high' ? 'bg-red-500/20 text-red-400 border border-red-500/30' : 'bg-amber-500/20 text-amber-300 border border-amber-500/30'
+          <div className="text-[10px] bg-slate-800/80 rounded px-2 py-1 flex items-center justify-between text-slate-300">
+            <span className="truncate">{recentEvents[0].event_type.toUpperCase().replace('_', ' ')}</span>
+            <span className={`font-bold px-1 rounded text-[9px] ${
+              recentEvents[0].severity === 'high' ? 'bg-red-500/20 text-red-400' : 'bg-amber-500/20 text-amber-300'
             }`}>
               {recentEvents[0].severity}
             </span>

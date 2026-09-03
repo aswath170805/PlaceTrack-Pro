@@ -23,13 +23,7 @@ export default function Navbar() {
   const pathname = usePathname();
   const router = useRouter();
 
-  if (
-    !user || 
-    pathname === '/' || 
-    pathname === '/login' || 
-    pathname === '/register' || 
-    (pathname.includes('/student/tests/') && !pathname.includes('/results'))
-  ) {
+  if (pathname.includes('/student/tests/') && !pathname.includes('/results')) {
     return null;
   }
 
