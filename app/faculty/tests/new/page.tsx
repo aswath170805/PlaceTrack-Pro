@@ -52,6 +52,8 @@ export default function CreateTestPage() {
   const [duration, setDuration] = useState<number>(45);
   const [isProctored, setIsProctored] = useState<boolean>(true);
   const [selectedBanks, setSelectedBanks] = useState<string[]>([MOCK_QUESTION_BANKS[0].id]);
+  const [targetDepartment, setTargetDepartment] = useState<string>('All Departments');
+  const [targetYear, setTargetYear] = useState<string>('All Years');
   const [isSubmitting, setIsSubmitting] = useState<boolean>(false);
   const [successMessage, setSuccessMessage] = useState<string | null>(null);
 
@@ -127,6 +129,8 @@ export default function CreateTestPage() {
         duration_minutes: duration,
         is_proctored: isProctored,
         created_by: 'Faculty Member',
+        target_department: targetDepartment,
+        target_year: targetYear,
       });
 
       setSuccessMessage('Assessment successfully configured and scheduled! Redirecting to Hub...');
@@ -224,7 +228,7 @@ export default function CreateTestPage() {
               </div>
             </div>
 
-            {/* Target Batch & Duration */}
+            {/* Target Batch, Target Department, Target Year & Duration */}
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
               <div>
                 <label className="block text-xs font-bold text-slate-700 mb-1.5">Target Student Batch</label>
@@ -250,6 +254,38 @@ export default function CreateTestPage() {
                   onChange={(e) => setDuration(Number(e.target.value))}
                   className="w-full p-3 bg-slate-50 border border-slate-200 rounded-xl text-xs font-bold text-slate-800"
                 />
+              </div>
+
+              <div>
+                <label className="block text-xs font-bold text-slate-700 mb-1.5">Target Department Allocation</label>
+                <select
+                  value={targetDepartment}
+                  onChange={(e) => setTargetDepartment(e.target.value)}
+                  className="w-full p-3 bg-slate-50 border border-slate-200 rounded-xl text-xs font-bold text-slate-800"
+                >
+                  <option value="All Departments">All Departments</option>
+                  <option value="AIDS">AIDS (Artificial Intelligence & Data Science)</option>
+                  <option value="CSE">CSE (Computer Science & Engineering)</option>
+                  <option value="ECE">ECE (Electronics & Communication)</option>
+                  <option value="EEE">EEE (Electrical & Electronics)</option>
+                  <option value="MECH">MECH (Mechanical Engineering)</option>
+                  <option value="BIOTECH">BIOTECH (Biotechnology)</option>
+                </select>
+              </div>
+
+              <div>
+                <label className="block text-xs font-bold text-slate-700 mb-1.5">Target Academic Year</label>
+                <select
+                  value={targetYear}
+                  onChange={(e) => setTargetYear(e.target.value)}
+                  className="w-full p-3 bg-slate-50 border border-slate-200 rounded-xl text-xs font-bold text-slate-800"
+                >
+                  <option value="All Years">All Years</option>
+                  <option value="1st Year">1st Year (Fresher Batch)</option>
+                  <option value="2nd Year">2nd Year (Pre-Placement Foundation)</option>
+                  <option value="3rd Year">3rd Year (Internship Placement)</option>
+                  <option value="4th Year">4th Year (Final Placement Drives)</option>
+                </select>
               </div>
             </div>
 

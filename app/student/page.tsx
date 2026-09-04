@@ -33,8 +33,22 @@ export default function StudentDashboard() {
     loadStudentData();
   }, [user]);
 
-  const dailyPracticeTest = tests.find((t) => t.type === 'daily_practice') || tests[0];
-  const weeklyTests = tests.filter((t) => t.type === 'weekly_assessment');
+  const userDept = user?.department || 'CSE';
+  const userYear = user?.year_of_study || '4th Year';
+
+  const isTestAllocated = (test: Test) => {
+    const deptMatch = !test.target_department || 
+                      test.target_department === 'All Departments' || 
+                      test.target_department.toLowerCase() === userDept.toLowerCase();
+    const yearMatch = !test.target_year || 
+                      test.target_year === 'All Years' || 
+                      test.target_year.toLowerCase() === userYear.toLowerCase();
+    return deptMatch && yearMatch;
+  };
+
+  const allocatedTests = tests.filter(isTestAllocated);
+  const dailyPracticeTest = allocatedTests.find((t) => t.type === 'daily_practice') || allocatedTests[0] || tests.find((t) => t.type === 'daily_practice');
+  const weeklyTests = allocatedTests.filter((t) => t.type === 'weekly_assessment');
 
   return (
     <div className="min-h-screen bg-slate-50 pb-12">
@@ -45,13 +59,13 @@ export default function StudentDashboard() {
           <div>
             <div className="inline-flex items-center space-x-2 bg-blue-500/20 border border-blue-400/30 rounded-full px-3 py-1 text-xs text-blue-200 font-medium mb-3">
               <Sparkles className="w-3.5 h-3.5 text-blue-300" />
-              <span>Placement Season 2026 Active</span>
+              <span>Placement Season 2026 • {userDept} ({userYear})</span>
             </div>
             <h1 className="text-3xl font-extrabold tracking-tight sm:text-4xl">
               Welcome back, {user?.full_name?.split(' ')[0] || 'Student'}! 👋
             </h1>
             <p className="mt-2 text-slate-300 max-w-xl text-sm leading-relaxed">
-              Track your daily practice, attempt scheduled mock assessments with live proctoring, and review AI-driven topic recommendations to boost your placement offers.
+              Track your daily practice, attempt scheduled mock assessments allocated to {userDept} - {userYear} with live proctoring, and review AI-driven topic recommendations.
             </p>
           </div>
 
@@ -85,9 +99,16 @@ export default function StudentDashboard() {
               <div className="absolute top-0 right-0 w-24 h-24 bg-blue-50 rounded-full -mr-8 -mt-8 pointer-events-none" />
               <div>
                 <div className="flex justify-between items-start mb-4">
-                  <span className="px-2.5 py-1 bg-blue-100 text-blue-700 font-semibold text-xs rounded-lg uppercase tracking-wider">
-                    Daily Practice Set
-                  </span>
+                  <div className="flex items-center space-x-1.5 flex-wrap gap-y-1">
+                    <span className="px-2.5 py-1 bg-blue-100 text-blue-700 font-semibold text-xs rounded-lg uppercase tracking-wider">
+                      Daily Practice Set
+                    </span>
+                    {dailyPracticeTest.target_department && dailyPracticeTest.target_department !== 'All Departments' && (
+                      <span className="px-2 py-0.5 bg-indigo-100 text-indigo-800 font-bold text-[10px] rounded">
+                        {dailyPracticeTest.target_department}
+                      </span>
+                    )}
+                  </div>
                   <span className="text-xs text-slate-400 font-mono flex items-center">
                     <Clock className="w-3.5 h-3.5 mr-1 text-slate-400" />
                     {dailyPracticeTest.duration_minutes} mins
@@ -97,7 +118,7 @@ export default function StudentDashboard() {
                   {dailyPracticeTest.title}
                 </h3>
                 <p className="text-xs text-slate-500 mb-4">
-                  Topic focus: Data Structures, Aptitude, Core OS. Build consistency with 4 quick questions.
+                  Topic focus: Data Structures, Aptitude, Core OS. Build consistency with quick curated questions.
                 </p>
               </div>
 
@@ -116,46 +137,63 @@ export default function StudentDashboard() {
             <div className="flex justify-between items-center mb-4">
               <div>
                 <h3 className="text-base font-bold text-slate-900">Scheduled Mock Assessments</h3>
-                <p className="text-xs text-slate-500">Proctored weekly tests scheduled by Faculty</p>
+                <p className="text-xs text-slate-500">Proctored tests allocated to your branch & year</p>
               </div>
               <span className="text-xs font-semibold text-blue-600 bg-blue-50 px-2.5 py-1 rounded-lg">
                 Active Window
               </span>
             </div>
 
-            <div className="space-y-4">
-              {weeklyTests.map((test) => (
-                <div 
-                  key={test.id}
-                  className="flex flex-col sm:flex-row sm:items-center justify-between p-4 bg-slate-50 hover:bg-blue-50/50 rounded-xl border border-slate-200/80 transition-all gap-4"
-                >
-                  <div className="space-y-1">
-                    <div className="flex items-center space-x-2">
-                      <span className="font-bold text-slate-900 text-sm">{test.title}</span>
-                      {test.is_proctored && (
-                        <span className="inline-flex items-center text-[10px] font-bold bg-amber-100 text-amber-800 px-2 py-0.5 rounded">
-                          <ShieldAlert className="w-3 h-3 mr-1 text-amber-600" />
-                          Proctored
-                        </span>
-                      )}
-                    </div>
-                    <div className="flex items-center space-x-4 text-xs text-slate-500">
-                      <span>Batch: <strong className="text-slate-700">{test.batch_name || 'CS-2026 Batch A'}</strong></span>
-                      <span>•</span>
-                      <span>Duration: <strong className="text-slate-700">{test.duration_minutes} mins</strong></span>
-                    </div>
-                  </div>
-
-                  <Link
-                    href={`/student/tests/${test.id}`}
-                    className="inline-flex items-center justify-center px-4 py-2 bg-slate-900 hover:bg-slate-800 text-white font-medium text-xs rounded-lg transition-colors whitespace-nowrap"
+            {weeklyTests.length === 0 ? (
+              <div className="p-8 text-center bg-slate-50 rounded-xl border border-dashed border-slate-200">
+                <p className="text-sm font-medium text-slate-600">No mock assessments currently scheduled for {userDept} - {userYear}.</p>
+                <p className="text-xs text-slate-400 mt-1">Check back soon or practice with the daily assessment set!</p>
+              </div>
+            ) : (
+              <div className="space-y-4">
+                {weeklyTests.map((test) => (
+                  <div 
+                    key={test.id}
+                    className="flex flex-col sm:flex-row sm:items-center justify-between p-4 bg-slate-50 hover:bg-blue-50/50 rounded-xl border border-slate-200/80 transition-all gap-4"
                   >
-                    Enter Assessment
-                    <ArrowRight className="w-3.5 h-3.5 ml-1.5" />
-                  </Link>
-                </div>
-              ))}
-            </div>
+                    <div className="space-y-1">
+                      <div className="flex items-center space-x-2 flex-wrap gap-y-1">
+                        <span className="font-bold text-slate-900 text-sm">{test.title}</span>
+                        {test.target_department && test.target_department !== 'All Departments' && (
+                          <span className="inline-flex items-center text-[10px] font-bold bg-indigo-100 text-indigo-800 px-2 py-0.5 rounded">
+                            {test.target_department}
+                          </span>
+                        )}
+                        {test.target_year && test.target_year !== 'All Years' && (
+                          <span className="inline-flex items-center text-[10px] font-bold bg-purple-100 text-purple-800 px-2 py-0.5 rounded">
+                            {test.target_year}
+                          </span>
+                        )}
+                        {test.is_proctored && (
+                          <span className="inline-flex items-center text-[10px] font-bold bg-amber-100 text-amber-800 px-2 py-0.5 rounded">
+                            <ShieldAlert className="w-3 h-3 mr-1 text-amber-600" />
+                            Proctored
+                          </span>
+                        )}
+                      </div>
+                      <div className="flex items-center space-x-4 text-xs text-slate-500">
+                        <span>Batch: <strong className="text-slate-700">{test.batch_name || `${test.target_department || 'General'} 2026`}</strong></span>
+                        <span>•</span>
+                        <span>Duration: <strong className="text-slate-700">{test.duration_minutes} mins</strong></span>
+                      </div>
+                    </div>
+
+                    <Link
+                      href={`/student/tests/${test.id}`}
+                      className="inline-flex items-center justify-center px-4 py-2 bg-slate-900 hover:bg-slate-800 text-white font-medium text-xs rounded-lg transition-colors whitespace-nowrap"
+                    >
+                      Enter Assessment
+                      <ArrowRight className="w-3.5 h-3.5 ml-1.5" />
+                    </Link>
+                  </div>
+                ))}
+              </div>
+            )}
           </div>
 
         </div>

@@ -33,6 +33,8 @@ export default function QuestionBanksPage() {
   const [showBankModal, setShowBankModal] = useState<boolean>(false);
   const [newBankTitle, setNewBankTitle] = useState<string>('');
   const [newBankTopic, setNewBankTopic] = useState<string>('');
+  const [newBankDept, setNewBankDept] = useState<string>('All Departments');
+  const [newBankYear, setNewBankYear] = useState<string>('All Years');
 
   // PDF upload modal state
   const [showPdfModal, setShowPdfModal] = useState<boolean>(false);
@@ -46,6 +48,8 @@ export default function QuestionBanksPage() {
   const [qText, setQText] = useState<string>('');
   const [qTopic, setQTopic] = useState<string>('Data Structures');
   const [qDifficulty, setQDifficulty] = useState<'easy' | 'medium' | 'hard'>('medium');
+  const [qDept, setQDept] = useState<string>('All Departments');
+  const [qYear, setQYear] = useState<string>('All Years');
   const [mcqOptions, setMcqOptions] = useState<string[]>(['Option A', 'Option B', 'Option C', 'Option D']);
   const [mcqCorrect, setMcqCorrect] = useState<number>(0);
   const [starterCode, setStarterCode] = useState<string>('function solution(nums, target) {\n  // Implement logic\n}');
@@ -64,6 +68,8 @@ export default function QuestionBanksPage() {
       id: 'qb-' + Math.random().toString(36).substring(2, 7),
       title: newBankTitle,
       topic: newBankTopic,
+      target_department: newBankDept,
+      target_year: newBankYear,
       question_count: 0,
       created_by: 'Faculty User',
     };
@@ -72,6 +78,8 @@ export default function QuestionBanksPage() {
     setShowBankModal(false);
     setNewBankTitle('');
     setNewBankTopic('');
+    setNewBankDept('All Departments');
+    setNewBankYear('All Years');
   };
 
   const handleOpenAddQuestion = () => {
@@ -80,6 +88,8 @@ export default function QuestionBanksPage() {
     setQText('');
     setQTopic(activeBank.topic || 'General');
     setQDifficulty('medium');
+    setQDept(activeBank.target_department || 'All Departments');
+    setQYear(activeBank.target_year || 'All Years');
     setMcqOptions(['Option A', 'Option B', 'Option C', 'Option D']);
     setMcqCorrect(0);
     setStarterCode('function solution() {\n  // Code here\n}');
@@ -96,6 +106,8 @@ export default function QuestionBanksPage() {
     setQText(q.content.questionText);
     setQTopic(q.topic);
     setQDifficulty(q.difficulty);
+    setQDept(q.target_department || activeBank.target_department || 'All Departments');
+    setQYear(q.target_year || activeBank.target_year || 'All Years');
     if (q.type === 'mcq') {
       setMcqOptions(q.content.options || ['Option A', 'Option B', 'Option C', 'Option D']);
       setMcqCorrect(typeof q.content.correctAnswer === 'number' ? q.content.correctAnswer : 0);
@@ -127,6 +139,8 @@ export default function QuestionBanksPage() {
             type: qType,
             topic: qTopic,
             difficulty: qDifficulty,
+            target_department: qDept,
+            target_year: qYear,
             content: {
               ...q.content,
               questionText: qText,
@@ -147,6 +161,8 @@ export default function QuestionBanksPage() {
         type: qType,
         topic: qTopic,
         difficulty: qDifficulty,
+        target_department: qDept,
+        target_year: qYear,
         content: {
           questionText: qText,
           options: qType === 'mcq' ? mcqOptions : undefined,
@@ -253,7 +269,21 @@ export default function QuestionBanksPage() {
                     : 'bg-white border-slate-200 text-slate-700 hover:bg-slate-100'
                 }`}
               >
-                <span className="block font-bold text-sm mb-1">{bank.title}</span>
+                <div className="flex items-center justify-between mb-1">
+                  <span className="block font-bold text-sm truncate">{bank.title}</span>
+                </div>
+                <div className="flex flex-wrap gap-1.5 mb-2">
+                  <span className={`px-1.5 py-0.5 rounded text-[10px] font-bold ${
+                    selectedBankId === bank.id ? 'bg-indigo-500/30 text-indigo-200' : 'bg-indigo-50 text-indigo-700'
+                  }`}>
+                    {bank.target_department || 'All Depts'}
+                  </span>
+                  <span className={`px-1.5 py-0.5 rounded text-[10px] font-bold ${
+                    selectedBankId === bank.id ? 'bg-slate-700 text-slate-300' : 'bg-slate-100 text-slate-600'
+                  }`}>
+                    {bank.target_year || 'All Years'}
+                  </span>
+                </div>
                 <div className="flex justify-between items-center text-[10px] opacity-75">
                   <span>Topic: {bank.topic}</span>
                   <span className="font-mono bg-white/10 px-2 py-0.5 rounded">{questions.filter((q) => q.bank_id === bank.id).length} questions</span>
@@ -297,7 +327,7 @@ export default function QuestionBanksPage() {
                     
                     {/* Top metadata and Edit/Delete triggers */}
                     <div className="flex justify-between items-start">
-                      <div className="flex items-center space-x-2">
+                      <div className="flex flex-wrap items-center gap-1.5">
                         <span className="text-xs font-mono font-bold bg-slate-200 text-slate-700 px-2 py-0.5 rounded">
                           Q{idx + 1}
                         </span>
@@ -312,6 +342,16 @@ export default function QuestionBanksPage() {
                         <span className="text-xs text-slate-500 font-medium">
                           {q.topic}
                         </span>
+                        {(q.target_department || activeBank.target_department) && (
+                          <span className="text-[10px] font-bold px-2 py-0.5 bg-indigo-50 text-indigo-700 rounded border border-indigo-150">
+                            Dept: {q.target_department || activeBank.target_department}
+                          </span>
+                        )}
+                        {(q.target_year || activeBank.target_year) && (
+                          <span className="text-[10px] font-bold px-2 py-0.5 bg-slate-100 text-slate-700 rounded border border-slate-200">
+                            Year: {q.target_year || activeBank.target_year}
+                          </span>
+                        )}
                       </div>
 
                       <div className="flex items-center space-x-1">
@@ -429,6 +469,39 @@ export default function QuestionBanksPage() {
               />
             </div>
 
+            <div className="grid grid-cols-2 gap-3">
+              <div>
+                <label className="block text-xs font-bold text-slate-700 mb-1">Target Department</label>
+                <select
+                  value={newBankDept}
+                  onChange={(e) => setNewBankDept(e.target.value)}
+                  className="w-full p-2.5 bg-slate-50 border border-slate-200 rounded-xl text-xs font-bold"
+                >
+                  <option value="All Departments">All Departments</option>
+                  <option value="AIDS">AIDS</option>
+                  <option value="CSE">CSE</option>
+                  <option value="ECE">ECE</option>
+                  <option value="EEE">EEE</option>
+                  <option value="MECH">MECH</option>
+                  <option value="BIOTECH">BIOTECH</option>
+                </select>
+              </div>
+              <div>
+                <label className="block text-xs font-bold text-slate-700 mb-1">Target Year</label>
+                <select
+                  value={newBankYear}
+                  onChange={(e) => setNewBankYear(e.target.value)}
+                  className="w-full p-2.5 bg-slate-50 border border-slate-200 rounded-xl text-xs font-bold"
+                >
+                  <option value="All Years">All Years</option>
+                  <option value="1st Year">1st Year</option>
+                  <option value="2nd Year">2nd Year</option>
+                  <option value="3rd Year">3rd Year</option>
+                  <option value="4th Year">4th Year</option>
+                </select>
+              </div>
+            </div>
+
             <div className="flex space-x-3 pt-2">
               <button
                 type="button"
@@ -542,6 +615,39 @@ export default function QuestionBanksPage() {
                   <option value="easy">Easy</option>
                   <option value="medium">Medium</option>
                   <option value="hard">Hard</option>
+                </select>
+              </div>
+            </div>
+
+            <div className="grid grid-cols-2 gap-3">
+              <div>
+                <label className="block text-xs font-bold text-slate-700 mb-1">Target Department</label>
+                <select
+                  value={qDept}
+                  onChange={(e) => setQDept(e.target.value)}
+                  className="w-full p-2.5 bg-slate-50 border border-slate-200 rounded-xl text-xs font-bold"
+                >
+                  <option value="All Departments">All Departments</option>
+                  <option value="AIDS">AIDS</option>
+                  <option value="CSE">CSE</option>
+                  <option value="ECE">ECE</option>
+                  <option value="EEE">EEE</option>
+                  <option value="MECH">MECH</option>
+                  <option value="BIOTECH">BIOTECH</option>
+                </select>
+              </div>
+              <div>
+                <label className="block text-xs font-bold text-slate-700 mb-1">Target Year</label>
+                <select
+                  value={qYear}
+                  onChange={(e) => setQYear(e.target.value)}
+                  className="w-full p-2.5 bg-slate-50 border border-slate-200 rounded-xl text-xs font-bold"
+                >
+                  <option value="All Years">All Years</option>
+                  <option value="1st Year">1st Year</option>
+                  <option value="2nd Year">2nd Year</option>
+                  <option value="3rd Year">3rd Year</option>
+                  <option value="4th Year">4th Year</option>
                 </select>
               </div>
             </div>

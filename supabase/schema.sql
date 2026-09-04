@@ -216,3 +216,53 @@ $$ LANGUAGE plpgsql SECURITY DEFINER;
 CREATE OR REPLACE TRIGGER on_auth_user_created
   AFTER INSERT ON auth.users
   FOR EACH ROW EXECUTE FUNCTION public.handle_new_user();
+
+-- 12. Verification Requests Table (Faculty / Student Approval Workflow)
+CREATE TABLE IF NOT EXISTS public.verification_requests (
+  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+  user_id UUID REFERENCES public.profiles(id) ON DELETE CASCADE,
+  role TEXT NOT NULL CHECK (role IN ('student', 'faculty', 'admin')),
+  status TEXT NOT NULL CHECK (status IN ('pending', 'approved', 'rejected')) DEFAULT 'pending',
+  rejection_reason TEXT,
+  reviewed_by UUID REFERENCES public.profiles(id) ON DELETE SET NULL,
+  reviewed_at TIMESTAMPTZ,
+  created_at TIMESTAMPTZ DEFAULT NOW()
+);
+
+ALTER TABLE public.verification_requests ENABLE ROW LEVEL SECURITY;
+CREATE POLICY "Admins manage verification requests" ON public.verification_requests FOR ALL USING (public.get_user_role() = 'admin');
+CREATE POLICY "Users view own verification requests" ON public.verification_requests FOR SELECT USING (user_id = auth.uid() OR public.get_user_role() = 'admin');
+
+-- Target Department & Academic Year allocations on tests, question banks, and questions
+ALTER TABLE public.tests ADD COLUMN IF NOT EXISTS target_department TEXT DEFAULT 'All Departments';
+ALTER TABLE public.tests ADD COLUMN IF NOT EXISTS target_year TEXT DEFAULT 'All Years';
+
+ALTER TABLE public.question_banks ADD COLUMN IF NOT EXISTS target_department TEXT DEFAULT 'All Departments';
+ALTER TABLE public.question_banks ADD COLUMN IF NOT EXISTS target_year TEXT DEFAULT 'All Years';
+
+ALTER TABLE public.questions ADD COLUMN IF NOT EXISTS target_department TEXT DEFAULT 'All Departments';
+ALTER TABLE public.questions ADD COLUMN IF NOT EXISTS target_year TEXT DEFAULT 'All Years';
+
+-- Database Trigger and Function to prevent client-side updates to role and is_verified
+CREATE OR REPLACE FUNCTION public.protect_profile_roles()
+RETURNS TRIGGER AS $$
+BEGIN
+  -- If invoked by an authenticated non-service-role client, prevent changing role or is_verified directly
+  IF (current_user != 'service_role' AND auth.role() = 'authenticated') THEN
+    IF (NEW.role IS DISTINCT FROM OLD.role) THEN
+      RAISE EXCEPTION 'Changing profile role is prohibited directly through client. Use Admin API.';
+    END IF;
+    IF (NEW.is_verified IS DISTINCT FROM OLD.is_verified) THEN
+      RAISE EXCEPTION 'Changing verification status is prohibited directly through client. Use Admin API.';
+    END IF;
+  END IF;
+  RETURN NEW;
+END;
+$$ LANGUAGE plpgsql SECURITY DEFINER;
+
+DROP TRIGGER IF EXISTS trg_protect_profile_roles ON public.profiles;
+CREATE TRIGGER trg_protect_profile_roles
+  BEFORE UPDATE ON public.profiles
+  FOR EACH ROW
+  EXECUTE FUNCTION public.protect_profile_roles();
+

@@ -13,15 +13,13 @@ import {
   CalendarCheck, 
   LogOut, 
   LogIn,
-  UserPlus,
-  BookOpen,
-  LayoutDashboard,
-  UserCheck,
-  ChevronDown,
-  Sparkles,
-  Shield,
-  Layers,
-  HelpCircle
+  BookOpen, 
+  LayoutDashboard, 
+  ChevronDown, 
+  Shield, 
+  Mail, 
+  Building2, 
+  CheckCircle2 
 } from 'lucide-react';
 
 export default function Navbar() {
@@ -59,8 +57,10 @@ export default function Navbar() {
     setShowLogoutModal(false);
     setIsProfileOpen(false);
     await logout();
-    router.push('/login');
+    router.replace('/login');
   };
+
+  const isFaculty = role === 'faculty';
 
   return (
     <header className="sticky top-0 z-50 bg-white/95 backdrop-blur-md border-b border-slate-200 shadow-xs">
@@ -169,19 +169,24 @@ export default function Navbar() {
           {/* Right Header Controls: Current Role Badge & Interactive Profile Dropdown */}
           <div className="flex items-center space-x-3">
             
-            {/* Active Role Pill Badge */}
-            <div className={`px-3 py-1 rounded-full text-xs font-bold uppercase tracking-wider flex items-center space-x-1.5 shadow-xs border ${
-              role === 'faculty' 
-                ? 'bg-indigo-50 text-indigo-700 border-indigo-200' 
-                : role === 'admin'
-                ? 'bg-amber-50 text-amber-700 border-amber-200'
-                : 'bg-blue-50 text-blue-700 border-blue-200'
-            }`}>
-              <span className={`w-2 h-2 rounded-full ${
-                role === 'faculty' ? 'bg-indigo-600' : role === 'admin' ? 'bg-amber-500' : 'bg-blue-600'
-              }`} />
-              <span>ROLE: {role}</span>
-            </div>
+            {/* Active Role Pill Badge: For Faculty users, restrict display to static FACULTY badge */}
+            {isFaculty ? (
+              <div className="px-3.5 py-1 rounded-full text-xs font-black uppercase tracking-wider flex items-center space-x-2 bg-indigo-50 text-indigo-700 border border-indigo-200 shadow-xs">
+                <span className="w-2 h-2 rounded-full bg-indigo-600 animate-pulse" />
+                <span>FACULTY</span>
+              </div>
+            ) : (
+              <div className={`px-3 py-1 rounded-full text-xs font-bold uppercase tracking-wider flex items-center space-x-1.5 shadow-xs border ${
+                role === 'admin'
+                  ? 'bg-amber-50 text-amber-700 border-amber-200'
+                  : 'bg-blue-50 text-blue-700 border-blue-200'
+              }`}>
+                <span className={`w-2 h-2 rounded-full ${
+                  role === 'admin' ? 'bg-amber-500' : 'bg-blue-600'
+                }`} />
+                <span>ROLE: {role}</span>
+              </div>
+            )}
 
             {/* User Profile Avatar with Clickable Modal Dropdown */}
             {user ? (
@@ -204,61 +209,78 @@ export default function Navbar() {
 
                 {/* Profile Modal Dropdown */}
                 {isProfileOpen && (
-                  <div className="absolute right-0 mt-2 w-64 bg-white rounded-2xl border border-slate-200 shadow-2xl py-2 z-50 animate-in fade-in slide-in-from-top-2 duration-150">
-                    <div className="px-4 py-3 border-b border-slate-100 bg-slate-50/50">
-                      <p className="text-xs font-bold text-slate-900">{user?.full_name}</p>
-                      <p className="text-[11px] text-slate-500 truncate">{user?.email}</p>
-                      <div className="mt-2 inline-flex items-center px-2 py-0.5 rounded-md text-[10px] font-black uppercase tracking-wider bg-slate-200 text-slate-700">
-                        Current Role: {role}
+                  <div className="absolute right-0 mt-2 w-72 bg-white rounded-2xl border border-slate-200 shadow-2xl py-2 z-50 animate-in fade-in slide-in-from-top-2 duration-150">
+                    
+                    {/* User Profile Info Card */}
+                    <div className="px-4 py-3 border-b border-slate-100 bg-slate-50/50 space-y-1.5">
+                      <div className="flex items-center justify-between">
+                        <p className="text-xs font-black text-slate-900">{user?.full_name}</p>
+                        <span className={`px-2 py-0.5 rounded text-[10px] font-black uppercase tracking-wider ${
+                          role === 'faculty' ? 'bg-indigo-100 text-indigo-800' : role === 'admin' ? 'bg-amber-100 text-amber-800' : 'bg-blue-100 text-blue-800'
+                        }`}>
+                          {role}
+                        </span>
+                      </div>
+
+                      <div className="flex items-center text-[11px] text-slate-500 truncate">
+                        <Mail className="w-3 h-3 mr-1.5 text-slate-400 shrink-0" />
+                        <span className="truncate">{user?.email || 'user@svce.ac.in'}</span>
+                      </div>
+
+                      <div className="flex items-center text-[11px] text-slate-500">
+                        <Building2 className="w-3 h-3 mr-1.5 text-slate-400 shrink-0" />
+                        <span>Department: <strong className="text-slate-700">{user?.department || 'CSE'}</strong></span>
                       </div>
                     </div>
 
-                    {/* Change Role Section */}
-                    <div className="px-3 py-2 border-b border-slate-100">
-                      <span className="block text-[10px] font-bold text-slate-400 uppercase tracking-wider mb-2 px-1">
-                        Switch Workspace Role
-                      </span>
-                      <div className="space-y-1">
-                        <button
-                          onClick={() => handleRoleChange('student')}
-                          className={`w-full text-left px-3 py-2 rounded-xl text-xs font-semibold flex items-center justify-between transition-colors ${
-                            role === 'student' ? 'bg-blue-50 text-blue-700 font-bold' : 'text-slate-600 hover:bg-slate-50'
-                          }`}
-                        >
-                          <div className="flex items-center">
-                            <GraduationCap className="w-4 h-4 mr-2 text-blue-600" />
-                            <span>Student Portal</span>
-                          </div>
-                          {role === 'student' && <span className="text-[10px] bg-blue-200 text-blue-800 px-1.5 py-0.5 rounded font-bold">Active</span>}
-                        </button>
+                    {/* Role Access / Switching: Hidden or Restricted for Faculty */}
+                    {!isFaculty && (
+                      <div className="px-3 py-2 border-b border-slate-100">
+                        <span className="block text-[10px] font-bold text-slate-400 uppercase tracking-wider mb-2 px-1">
+                          Switch Workspace Role
+                        </span>
+                        <div className="space-y-1">
+                          <button
+                            onClick={() => handleRoleChange('student')}
+                            className={`w-full text-left px-3 py-2 rounded-xl text-xs font-semibold flex items-center justify-between transition-colors ${
+                              role === 'student' ? 'bg-blue-50 text-blue-700 font-bold' : 'text-slate-600 hover:bg-slate-50'
+                            }`}
+                          >
+                            <div className="flex items-center">
+                              <GraduationCap className="w-4 h-4 mr-2 text-blue-600" />
+                              <span>Student Portal</span>
+                            </div>
+                            {role === 'student' && <span className="text-[10px] bg-blue-200 text-blue-800 px-1.5 py-0.5 rounded font-bold">Active</span>}
+                          </button>
 
-                        <button
-                          onClick={() => handleRoleChange('faculty')}
-                          className={`w-full text-left px-3 py-2 rounded-xl text-xs font-semibold flex items-center justify-between transition-colors ${
-                            role === 'faculty' ? 'bg-indigo-50 text-indigo-700 font-bold' : 'text-slate-600 hover:bg-slate-50'
-                          }`}
-                        >
-                          <div className="flex items-center">
-                            <BookOpen className="w-4 h-4 mr-2 text-indigo-600" />
-                            <span>Faculty Hub</span>
-                          </div>
-                          {role === 'faculty' && <span className="text-[10px] bg-indigo-200 text-indigo-800 px-1.5 py-0.5 rounded font-bold">Active</span>}
-                        </button>
+                          <button
+                            onClick={() => handleRoleChange('faculty')}
+                            className={`w-full text-left px-3 py-2 rounded-xl text-xs font-semibold flex items-center justify-between transition-colors ${
+                              (role as string) === 'faculty' ? 'bg-indigo-50 text-indigo-700 font-bold' : 'text-slate-600 hover:bg-slate-50'
+                            }`}
+                          >
+                            <div className="flex items-center">
+                              <BookOpen className="w-4 h-4 mr-2 text-indigo-600" />
+                              <span>Faculty Hub</span>
+                            </div>
+                            {(role as string) === 'faculty' && <span className="text-[10px] bg-indigo-200 text-indigo-800 px-1.5 py-0.5 rounded font-bold">Active</span>}
+                          </button>
 
-                        <button
-                          onClick={() => handleRoleChange('admin')}
-                          className={`w-full text-left px-3 py-2 rounded-xl text-xs font-semibold flex items-center justify-between transition-colors ${
-                            role === 'admin' ? 'bg-amber-50 text-amber-700 font-bold' : 'text-slate-600 hover:bg-slate-50'
-                          }`}
-                        >
-                          <div className="flex items-center">
-                            <Shield className="w-4 h-4 mr-2 text-amber-600" />
-                            <span>Admin Center</span>
-                          </div>
-                          {role === 'admin' && <span className="text-[10px] bg-amber-200 text-amber-800 px-1.5 py-0.5 rounded font-bold">Active</span>}
-                        </button>
+                          <button
+                            onClick={() => handleRoleChange('admin')}
+                            className={`w-full text-left px-3 py-2 rounded-xl text-xs font-semibold flex items-center justify-between transition-colors ${
+                              role === 'admin' ? 'bg-amber-50 text-amber-700 font-bold' : 'text-slate-600 hover:bg-slate-50'
+                            }`}
+                          >
+                            <div className="flex items-center">
+                              <Shield className="w-4 h-4 mr-2 text-amber-600" />
+                              <span>Admin Center</span>
+                            </div>
+                            {role === 'admin' && <span className="text-[10px] bg-amber-200 text-amber-800 px-1.5 py-0.5 rounded font-bold">Active</span>}
+                          </button>
+                        </div>
                       </div>
-                    </div>
+                    )}
 
                     {/* Logout Trigger */}
                     <div className="p-2">

@@ -9,6 +9,7 @@ import {
   MOCK_PROCTORING_EVENTS, 
   MOCK_ATTENDANCE, 
   MOCK_AUDIT_LOGS,
+  MOCK_VERIFICATION_REQUESTS,
   Batch,
   Profile,
   QuestionBank,
@@ -17,7 +18,8 @@ import {
   TestAttempt,
   ProctoringEvent,
   AttendanceRecord,
-  AuditLog
+  AuditLog,
+  VerificationRequest
 } from '@/lib/mockData';
 
 // Direct Supabase Postgres Database Service
@@ -64,15 +66,107 @@ export class DatabaseService {
     return MOCK_PROFILES;
   }
 
-  static async updateProfileRole(userId: string, role: 'student' | 'faculty' | 'admin'): Promise<void> {
+  static async updateProfileRole(userId: string, role: 'student' | 'faculty' | 'admin', requesterId?: string): Promise<void> {
     try {
-      const supabase = this.getSupabase();
-      await supabase.from('profiles').update({ role }).eq('id', userId);
+      if (typeof window !== 'undefined') {
+        const res = await fetch('/api/admin/update-role', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ userId, newRole: role, requesterId: requesterId || 'a3333333-3333-3333-3333-333333333333' }),
+        });
+        if (!res.ok) {
+          console.warn('API update-role returned non-ok status');
+        }
+      } else {
+        const supabase = this.getSupabase();
+        await supabase.from('profiles').update({ role }).eq('id', userId);
+      }
     } catch (e) {
-      console.warn('Supabase DB updateProfileRole error:', e);
+      console.warn('Supabase DB / API updateProfileRole error:', e);
     }
     const profile = MOCK_PROFILES.find((p) => p.id === userId);
     if (profile) profile.role = role;
+  }
+
+  // VERIFICATION REQUESTS
+  static async getVerificationRequests(): Promise<VerificationRequest[]> {
+    try {
+      const supabase = this.getSupabase();
+      const { data, error } = await supabase.from('verification_requests').select('*');
+      if (!error && data) return data as VerificationRequest[];
+    } catch (e) {
+      console.warn('Supabase DB getVerificationRequests error:', e);
+    }
+    return MOCK_VERIFICATION_REQUESTS;
+  }
+
+  static async approveVerificationRequest(requestId: string, userId: string, reviewerId?: string): Promise<boolean> {
+    try {
+      if (typeof window !== 'undefined') {
+        const res = await fetch('/api/admin/verify-request', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            requestId,
+            userId,
+            status: 'approved',
+            reviewerId: reviewerId || 'a3333333-3333-3333-3333-333333333333'
+          })
+        });
+        if (res.ok) {
+          const req = MOCK_VERIFICATION_REQUESTS.find(r => r.id === requestId);
+          if (req) req.status = 'approved';
+          const prof = MOCK_PROFILES.find(p => p.id === userId);
+          if (prof) prof.is_verified = true;
+          return true;
+        }
+      }
+    } catch (e) {
+      console.warn('API approveVerificationRequest error:', e);
+    }
+    const req = MOCK_VERIFICATION_REQUESTS.find(r => r.id === requestId);
+    if (req) req.status = 'approved';
+    const prof = MOCK_PROFILES.find(p => p.id === userId);
+    if (prof) prof.is_verified = true;
+    return true;
+  }
+
+  static async rejectVerificationRequest(requestId: string, userId: string, reason?: string, reviewerId?: string): Promise<boolean> {
+    try {
+      if (typeof window !== 'undefined') {
+        const res = await fetch('/api/admin/verify-request', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            requestId,
+            userId,
+            status: 'rejected',
+            reason: reason || 'Access request declined by Administrator',
+            reviewerId: reviewerId || 'a3333333-3333-3333-3333-333333333333'
+          })
+        });
+        if (res.ok) {
+          const req = MOCK_VERIFICATION_REQUESTS.find(r => r.id === requestId);
+          if (req) {
+            req.status = 'rejected';
+            req.rejection_reason = reason;
+          }
+          const prof = MOCK_PROFILES.find(p => p.id === userId);
+          if (prof) prof.is_verified = false;
+          return true;
+        }
+      }
+    } catch (e) {
+      console.warn('API rejectVerificationRequest error:', e);
+    }
+    const req = MOCK_VERIFICATION_REQUESTS.find(r => r.id === requestId);
+    if (req) {
+      req.status = 'rejected';
+      req.rejection_reason = reason;
+    }
+    const prof = MOCK_PROFILES.find(p => p.id === userId);
+    if (prof) prof.is_verified = false;
+    return true;
   }
 
   // QUESTION BANKS & QUESTIONS
@@ -87,15 +181,29 @@ export class DatabaseService {
     return MOCK_QUESTION_BANKS;
   }
 
-  static async createQuestionBank(title: string, topic: string, createdBy: string): Promise<QuestionBank> {
+  static async createQuestionBank(title: string, topic: string, createdBy: string, target_department?: string, target_year?: string): Promise<QuestionBank> {
     try {
       const supabase = this.getSupabase();
-      const { data, error } = await supabase.from('question_banks').insert([{ title, topic, created_by: createdBy }]).select().single();
+      const { data, error } = await supabase.from('question_banks').insert([{
+        title,
+        topic,
+        created_by: createdBy,
+        target_department: target_department || 'All Departments',
+        target_year: target_year || 'All Years'
+      }]).select().single();
       if (!error && data) return data as QuestionBank;
     } catch (e) {
       console.warn('Supabase DB createQuestionBank error:', e);
     }
-    const newBank: QuestionBank = { id: 'qb-' + Math.random().toString(36).substring(2, 9), title, topic, question_count: 0, created_by: createdBy };
+    const newBank: QuestionBank = {
+      id: 'qb-' + Math.random().toString(36).substring(2, 9),
+      title,
+      topic,
+      question_count: 0,
+      created_by: createdBy,
+      target_department: target_department || 'All Departments',
+      target_year: target_year || 'All Years'
+    };
     MOCK_QUESTION_BANKS.push(newBank);
     return newBank;
   }
@@ -122,6 +230,8 @@ export class DatabaseService {
         topic: question.topic,
         difficulty: question.difficulty,
         content: question.content,
+        target_department: question.target_department || 'All Departments',
+        target_year: question.target_year || 'All Years'
       }]).select().single();
       if (!error && data) return data as Question;
     } catch (e) {
@@ -133,6 +243,8 @@ export class DatabaseService {
       type: question.type || 'mcq',
       topic: question.topic || 'General',
       difficulty: question.difficulty || 'medium',
+      target_department: question.target_department || 'All Departments',
+      target_year: question.target_year || 'All Years',
       content: question.content || { questionText: 'Sample Question' },
       created_at: new Date().toISOString(),
     };
@@ -161,6 +273,8 @@ export class DatabaseService {
         batch_id: testData.batch_id,
         duration_minutes: testData.duration_minutes,
         is_proctored: testData.is_proctored,
+        target_department: testData.target_department || 'All Departments',
+        target_year: testData.target_year || 'All Years'
       }]).select().single();
       if (!error && data) return data as Test;
     } catch (e) {
@@ -178,6 +292,8 @@ export class DatabaseService {
       created_by: testData.created_by || 'Faculty Member',
       is_proctored: testData.is_proctored !== undefined ? testData.is_proctored : true,
       question_count: 5,
+      target_department: testData.target_department || 'All Departments',
+      target_year: testData.target_year || 'All Years',
     };
     MOCK_TESTS.unshift(newTest);
     return newTest;

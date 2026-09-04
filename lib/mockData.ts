@@ -24,6 +24,8 @@ export interface QuestionBank {
   topic: string;
   question_count?: number;
   created_by: string;
+  target_department?: string;
+  target_year?: string;
 }
 
 export interface Question {
@@ -32,6 +34,8 @@ export interface Question {
   type: 'mcq' | 'coding' | 'short_answer';
   topic: string;
   difficulty: 'easy' | 'medium' | 'hard';
+  target_department?: string;
+  target_year?: string;
   content: {
     questionText: string;
     options?: string[];
@@ -55,6 +59,22 @@ export interface Test {
   created_by: string;
   is_proctored: boolean;
   question_count?: number;
+  target_department?: string;
+  target_year?: string;
+}
+
+export interface VerificationRequest {
+  id: string;
+  user_id: string;
+  user_name?: string;
+  email?: string;
+  role: 'student' | 'faculty' | 'admin';
+  department?: string;
+  status: 'pending' | 'approved' | 'rejected';
+  rejection_reason?: string;
+  reviewed_by?: string;
+  reviewed_at?: string;
+  created_at: string;
 }
 
 export interface TestAttempt {
@@ -126,16 +146,17 @@ export const MOCK_PROFILES: Profile[] = [
     id: 's1111111-1111-1111-1111-111111111111',
     full_name: 'Alex Johnson (Student)',
     role: 'student',
-    department: 'Computer Science',
-    year_of_study: 'Final Year',
+    department: 'CSE',
+    year_of_study: '4th Year',
     batch_id: 'b1111111-1111-1111-1111-111111111111',
+    is_verified: true,
     created_at: new Date().toISOString(),
   },
   {
     id: 'f2222222-2222-2222-2222-222222222222',
     full_name: 'Dr. Sarah Connor (Faculty)',
     role: 'faculty',
-    department: 'Computer Science',
+    department: 'CSE',
     year_of_study: 'N/A',
     is_verified: true,
     created_at: new Date().toISOString(),
@@ -146,14 +167,17 @@ export const MOCK_PROFILES: Profile[] = [
     role: 'admin',
     department: 'Placement Cell',
     year_of_study: 'N/A',
+    is_verified: true,
     created_at: new Date().toISOString(),
   },
 ];
 
 export const MOCK_QUESTION_BANKS: QuestionBank[] = [
-  { id: 'qb-1', title: 'Data Structures & Algorithms', topic: 'DSA', question_count: 8, created_by: 'Dr. Sarah Connor' },
-  { id: 'qb-2', title: 'Quantitative Aptitude & Reasoning', topic: 'Aptitude', question_count: 6, created_by: 'Dr. Sarah Connor' },
-  { id: 'qb-3', title: 'Operating Systems & Networks', topic: 'Core CS', question_count: 5, created_by: 'Dr. Sarah Connor' },
+  { id: 'qb-1', title: 'Data Structures & Algorithms', topic: 'DSA', question_count: 8, created_by: 'Dr. Sarah Connor', target_department: 'CSE', target_year: '4th Year' },
+  { id: 'qb-2', title: 'Quantitative Aptitude & Reasoning', topic: 'Aptitude', question_count: 6, created_by: 'Dr. Sarah Connor', target_department: 'All Departments', target_year: 'All Years' },
+  { id: 'qb-3', title: 'Operating Systems & Networks', topic: 'Core CS', question_count: 5, created_by: 'Dr. Sarah Connor', target_department: 'CSE', target_year: '3rd Year' },
+  { id: 'qb-4', title: 'Deep Learning & Neural Networks', topic: 'AI/ML', question_count: 5, created_by: 'Prof. Ramesh Kumar', target_department: 'AIDS', target_year: '4th Year' },
+  { id: 'qb-5', title: 'Digital Signal Processing & VLSI', topic: 'Electronics', question_count: 5, created_by: 'Dr. K. Swaminathan', target_department: 'ECE', target_year: '3rd Year' },
 ];
 
 export const MOCK_QUESTIONS: Question[] = [
@@ -163,6 +187,8 @@ export const MOCK_QUESTIONS: Question[] = [
     type: 'mcq',
     topic: 'Data Structures',
     difficulty: 'easy',
+    target_department: 'CSE',
+    target_year: '4th Year',
     content: {
       questionText: 'What is the worst-case time complexity of accessing an element in an unsorted Array vs a Singly Linked List?',
       options: ['O(1) for Array, O(n) for Linked List', 'O(n) for Array, O(1) for Linked List', 'O(1) for both', 'O(log n) for both'],
@@ -177,6 +203,8 @@ export const MOCK_QUESTIONS: Question[] = [
     type: 'mcq',
     topic: 'Algorithms',
     difficulty: 'medium',
+    target_department: 'CSE',
+    target_year: '4th Year',
     content: {
       questionText: 'Which algorithm is best suited for finding the shortest path in a weighted graph with non-negative edge weights?',
       options: ['Breadth-First Search (BFS)', 'Dijkstra’s Algorithm', 'Bellman-Ford Algorithm', 'Depth-First Search (DFS)'],
@@ -191,6 +219,8 @@ export const MOCK_QUESTIONS: Question[] = [
     type: 'coding',
     topic: 'Data Structures',
     difficulty: 'medium',
+    target_department: 'CSE',
+    target_year: '4th Year',
     content: {
       questionText: 'Write a function `twoSum(nums, target)` that returns indices of the two numbers such that they add up to target. (e.g., input: `[2,7,11,15], 9` -> returns `[0, 1]`)',
       starterCode: 'function twoSum(nums, target) {\n  const map = new Map();\n  for (let i = 0; i < nums.length; i++) {\n    const complement = target - nums[i];\n    if (map.has(complement)) {\n      return [map.get(complement), i];\n    }\n    map.set(nums[i], i);\n  }\n  return [];\n}',
@@ -210,6 +240,8 @@ export const MOCK_QUESTIONS: Question[] = [
     type: 'mcq',
     topic: 'Quantitative Aptitude',
     difficulty: 'easy',
+    target_department: 'All Departments',
+    target_year: 'All Years',
     content: {
       questionText: 'A train 150m long is running at a speed of 54 km/hr. How much time will it take to cross a platform 250m long?',
       options: ['20 seconds', '26.67 seconds', '30 seconds', '15 seconds'],
@@ -224,6 +256,8 @@ export const MOCK_QUESTIONS: Question[] = [
     type: 'mcq',
     topic: 'Operating Systems',
     difficulty: 'medium',
+    target_department: 'CSE',
+    target_year: '3rd Year',
     content: {
       questionText: 'Which CPU scheduling policy minimizes the average waiting time for a given set of processes?',
       options: ['First-Come, First-Served (FCFS)', 'Round Robin (RR)', 'Shortest Job First (SJF)', 'Priority Scheduling'],
@@ -247,6 +281,8 @@ export const MOCK_TESTS: Test[] = [
     created_by: 'Dr. Sarah Connor',
     is_proctored: true,
     question_count: 4,
+    target_department: 'All Departments',
+    target_year: 'All Years',
   },
   {
     id: 't-102',
@@ -260,6 +296,63 @@ export const MOCK_TESTS: Test[] = [
     created_by: 'Dr. Sarah Connor',
     is_proctored: true,
     question_count: 5,
+    target_department: 'CSE',
+    target_year: '4th Year',
+  },
+  {
+    id: 't-103',
+    title: 'AI & Data Engineering Placement Qualifier',
+    type: 'weekly_assessment',
+    batch_id: 'b2222222-2222-2222-2222-222222222222',
+    batch_name: 'AIDS-2026 Core Batch',
+    start_time: new Date(Date.now() - 3600000).toISOString(),
+    end_time: new Date(Date.now() + 3600000 * 96).toISOString(),
+    duration_minutes: 60,
+    created_by: 'Prof. Ramesh Kumar',
+    is_proctored: true,
+    question_count: 5,
+    target_department: 'AIDS',
+    target_year: '4th Year',
+  },
+  {
+    id: 't-104',
+    title: 'Core ECE VLSI & Embedded Systems Assessment',
+    type: 'custom',
+    batch_id: 'b3333333-3333-3333-3333-333333333333',
+    batch_name: 'ECE Placement Batch',
+    start_time: new Date(Date.now() - 3600000).toISOString(),
+    end_time: new Date(Date.now() + 3600000 * 72).toISOString(),
+    duration_minutes: 45,
+    created_by: 'Dr. K. Swaminathan',
+    is_proctored: true,
+    question_count: 5,
+    target_department: 'ECE',
+    target_year: '3rd Year',
+  },
+];
+
+export const MOCK_VERIFICATION_REQUESTS: VerificationRequest[] = [
+  {
+    id: 'vr-1',
+    user_id: 'f-pending-1',
+    user_name: 'Prof. Ramesh Kumar',
+    email: 'ramesh.k@svce.ac.in',
+    role: 'faculty',
+    department: 'AIDS',
+    status: 'pending',
+    created_at: new Date(Date.now() - 3600000 * 4).toISOString(),
+  },
+  {
+    id: 'vr-2',
+    user_id: 'f2222222-2222-2222-2222-222222222222',
+    user_name: 'Dr. Sarah Connor (Faculty)',
+    email: 'sarah.connor@svce.ac.in',
+    role: 'faculty',
+    department: 'CSE',
+    status: 'approved',
+    reviewed_by: 'a3333333-3333-3333-3333-333333333333',
+    reviewed_at: new Date(Date.now() - 3600000 * 24).toISOString(),
+    created_at: new Date(Date.now() - 3600000 * 48).toISOString(),
   },
 ];
 
