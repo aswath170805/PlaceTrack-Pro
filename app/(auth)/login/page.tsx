@@ -8,7 +8,7 @@ import { GraduationCap, Lock, Mail, ArrowRight, AlertCircle } from 'lucide-react
 
 export default function CentralizedLoginPage() {
   const router = useRouter();
-  const { signInWithEmail, isLoading } = useAuth();
+  const { signInWithEmail, isLoading, isAdminAccessVisible, isFacultyAccessVisible } = useAuth();
 
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
@@ -95,6 +95,29 @@ export default function CentralizedLoginPage() {
               <ArrowRight className="w-4 h-4 ml-1.5" />
             </button>
           </form>
+
+          {(isAdminAccessVisible || isFacultyAccessVisible) && (
+            <div className="mt-6 border-t border-slate-800 pt-4 space-y-3">
+              {isAdminAccessVisible && (
+                <button
+                  type="button"
+                  onClick={() => router.push('/admin')}
+                  className="w-full py-2.5 bg-amber-600 hover:bg-amber-500 text-white font-bold text-xs rounded-xl"
+                >
+                  Admin Entry
+                </button>
+              )}
+              {isFacultyAccessVisible && (
+                <button
+                  type="button"
+                  onClick={() => router.push('/faculty')}
+                  className="w-full py-2.5 bg-indigo-600 hover:bg-indigo-500 text-white font-bold text-xs rounded-xl"
+                >
+                  Faculty Entry
+                </button>
+              )}
+            </div>
+          )}
 
           <div className="mt-6 border-t border-slate-800 pt-4 text-center">
             <p className="text-xs text-slate-400">

@@ -24,8 +24,6 @@ interface AuthContextType {
   refreshSession: () => Promise<void>;
   isAdminAccessVisible: boolean;
   isFacultyAccessVisible: boolean;
-  loginWithRole: (role: 'student' | 'faculty' | 'admin') => void;
-  switchRole: (role: 'student' | 'faculty' | 'admin') => void;
   signInWithEmail: (email: string, pass: string) => Promise<{ success: boolean; role?: 'student' | 'faculty' | 'admin'; error?: string }>;
   signUpWithEmail: (data: { email: string; pass: string; fullName: string; role: 'student' | 'faculty'; department: string; yearOfStudy?: string; batchId?: string }) => Promise<{ success: boolean; error?: string }>;
   logout: () => Promise<void>;
@@ -39,8 +37,6 @@ const AuthContext = createContext<AuthContextType>({
   refreshSession: async () => {},
   isAdminAccessVisible: false,
   isFacultyAccessVisible: false,
-  loginWithRole: () => {},
-  switchRole: () => {},
   signInWithEmail: async () => ({ success: false }),
   signUpWithEmail: async () => ({ success: false }),
   logout: async () => {},
@@ -110,17 +106,6 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       window.clearInterval(interval);
     };
   }, []);
-
-  const loginWithRole = (targetRole: 'student' | 'faculty' | 'admin') => {
-    setRole(targetRole);
-    if (user) {
-      setUser({ ...user, role: targetRole } as Profile);
-    }
-  };
-
-  const switchRole = (targetRole: 'student' | 'faculty' | 'admin') => {
-    loginWithRole(targetRole);
-  };
 
   const signInWithEmail = async (email: string, pass: string) => {
     setIsLoading(true);
@@ -199,7 +184,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   };
 
   return (
-    <AuthContext.Provider value={{ user, role, isLoading, isSessionReady, refreshSession, isAdminAccessVisible, isFacultyAccessVisible, loginWithRole, switchRole, signInWithEmail, signUpWithEmail, logout }}>
+    <AuthContext.Provider value={{ user, role, isLoading, isSessionReady, refreshSession, isAdminAccessVisible, isFacultyAccessVisible, signInWithEmail, signUpWithEmail, logout }}>
       {children}
     </AuthContext.Provider>
   );

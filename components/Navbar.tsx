@@ -23,7 +23,7 @@ import {
 } from 'lucide-react';
 
 export default function Navbar() {
-  const { user, role, switchRole, logout } = useAuth();
+  const { user, role, logout } = useAuth();
   const pathname = usePathname();
   const router = useRouter();
 
@@ -44,14 +44,6 @@ export default function Navbar() {
   if (pathname.includes('/student/tests/') && !pathname.includes('/results')) {
     return null;
   }
-
-  const handleRoleChange = (newRole: 'student' | 'faculty' | 'admin') => {
-    switchRole(newRole);
-    setIsProfileOpen(false);
-    if (newRole === 'student') router.push('/student');
-    else if (newRole === 'faculty') router.push('/faculty');
-    else if (newRole === 'admin') router.push('/admin');
-  };
 
   const confirmLogout = async () => {
     setShowLogoutModal(false);
@@ -232,55 +224,6 @@ export default function Navbar() {
                         <span>Department: <strong className="text-slate-700">{user?.department || 'CSE'}</strong></span>
                       </div>
                     </div>
-
-                    {/* Role Access / Switching: Hidden or Restricted for Faculty */}
-                    {!isFaculty && (
-                      <div className="px-3 py-2 border-b border-slate-100">
-                        <span className="block text-[10px] font-bold text-slate-400 uppercase tracking-wider mb-2 px-1">
-                          Switch Workspace Role
-                        </span>
-                        <div className="space-y-1">
-                          <button
-                            onClick={() => handleRoleChange('student')}
-                            className={`w-full text-left px-3 py-2 rounded-xl text-xs font-semibold flex items-center justify-between transition-colors ${
-                              role === 'student' ? 'bg-blue-50 text-blue-700 font-bold' : 'text-slate-600 hover:bg-slate-50'
-                            }`}
-                          >
-                            <div className="flex items-center">
-                              <GraduationCap className="w-4 h-4 mr-2 text-blue-600" />
-                              <span>Student Portal</span>
-                            </div>
-                            {role === 'student' && <span className="text-[10px] bg-blue-200 text-blue-800 px-1.5 py-0.5 rounded font-bold">Active</span>}
-                          </button>
-
-                          <button
-                            onClick={() => handleRoleChange('faculty')}
-                            className={`w-full text-left px-3 py-2 rounded-xl text-xs font-semibold flex items-center justify-between transition-colors ${
-                              (role as string) === 'faculty' ? 'bg-indigo-50 text-indigo-700 font-bold' : 'text-slate-600 hover:bg-slate-50'
-                            }`}
-                          >
-                            <div className="flex items-center">
-                              <BookOpen className="w-4 h-4 mr-2 text-indigo-600" />
-                              <span>Faculty Hub</span>
-                            </div>
-                            {(role as string) === 'faculty' && <span className="text-[10px] bg-indigo-200 text-indigo-800 px-1.5 py-0.5 rounded font-bold">Active</span>}
-                          </button>
-
-                          <button
-                            onClick={() => handleRoleChange('admin')}
-                            className={`w-full text-left px-3 py-2 rounded-xl text-xs font-semibold flex items-center justify-between transition-colors ${
-                              role === 'admin' ? 'bg-amber-50 text-amber-700 font-bold' : 'text-slate-600 hover:bg-slate-50'
-                            }`}
-                          >
-                            <div className="flex items-center">
-                              <Shield className="w-4 h-4 mr-2 text-amber-600" />
-                              <span>Admin Center</span>
-                            </div>
-                            {role === 'admin' && <span className="text-[10px] bg-amber-200 text-amber-800 px-1.5 py-0.5 rounded font-bold">Active</span>}
-                          </button>
-                        </div>
-                      </div>
-                    )}
 
                     {/* Logout Trigger */}
                     <div className="p-2">
