@@ -4,23 +4,14 @@ import React, { useState } from 'react';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import { useAuth } from '@/lib/authContext';
-import { 
-  GraduationCap, 
-  Lock, 
-  Mail, 
-  ArrowRight, 
-  ShieldAlert, 
-  BookOpen, 
-  UserCheck, 
-  AlertCircle 
-} from 'lucide-react';
+import { GraduationCap, Lock, Mail, ArrowRight, AlertCircle } from 'lucide-react';
 
 export default function CentralizedLoginPage() {
   const router = useRouter();
-  const { signInWithEmail, loginWithRole, isLoading } = useAuth();
+  const { signInWithEmail, isLoading } = useAuth();
 
-  const [email, setEmail] = useState<string>('');
-  const [password, setPassword] = useState<string>('');
+  const [email, setEmail] = useState('');
+  const [password, setPassword] = useState('');
   const [errorMsg, setErrorMsg] = useState<string | null>(null);
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -28,26 +19,18 @@ export default function CentralizedLoginPage() {
     setErrorMsg(null);
 
     const res = await signInWithEmail(email, password);
-    if (res.success) {
-      if (email.includes('faculty')) router.push('/faculty');
-      else if (email.includes('admin')) router.push('/admin');
+    if (res.success && res.role) {
+      if (res.role === 'admin') router.push('/admin');
+      else if (res.role === 'faculty') router.push('/faculty');
       else router.push('/student');
-    } else {
-      setErrorMsg(res.error || 'Invalid credentials. Please check your email and password.');
+      return;
     }
-  };
 
-  const handleQuickLogin = (targetRole: 'student' | 'faculty' | 'admin') => {
-    loginWithRole(targetRole);
-    if (targetRole === 'student') router.push('/student');
-    else if (targetRole === 'faculty') router.push('/faculty');
-    else if (targetRole === 'admin') router.push('/admin');
+    setErrorMsg(res.error || 'Invalid credentials. Please check your email and password.');
   };
 
   return (
     <div className="min-h-screen bg-slate-950 text-white flex flex-col justify-center py-12 sm:px-6 lg:px-8 relative overflow-hidden selection:bg-blue-600 selection:text-white">
-      
-      {/* Background Gradients */}
       <div className="absolute top-0 left-1/2 -translate-x-1/2 w-[800px] h-[400px] bg-gradient-to-b from-blue-600/20 via-indigo-600/10 to-transparent blur-3xl pointer-events-none" />
 
       <div className="sm:mx-auto sm:w-full sm:max-w-md relative z-10 text-center">
@@ -59,47 +42,12 @@ export default function CentralizedLoginPage() {
 
         <h2 className="text-3xl font-black tracking-tight text-white">PlaceTrack Pro Portal Sign In</h2>
         <p className="mt-2 text-xs text-slate-400">
-          Sign in with your email or select a role persona to enter your isolated environment
+          Sign in with your email to access your assigned portal.
         </p>
       </div>
 
-      <div className="mt-8 sm:mx-auto sm:w-full sm:max-w-md relative z-10 px-4 space-y-6">
-        
-        {/* Quick Role Persona Sign In Buttons */}
-        <div className="bg-slate-900/90 border border-slate-800 p-4 rounded-3xl space-y-2">
-          <span className="block text-[11px] font-bold text-slate-400 uppercase tracking-wider text-center mb-2">
-            Instant 1-Click Role Persona Login
-          </span>
-          <div className="grid grid-cols-3 gap-2">
-            <button
-              onClick={() => handleQuickLogin('student')}
-              className="p-2.5 bg-blue-600/20 hover:bg-blue-600/30 border border-blue-500/30 text-blue-300 font-bold text-xs rounded-xl transition-all flex flex-col items-center justify-center space-y-1"
-            >
-              <GraduationCap className="w-4 h-4 text-blue-400" />
-              <span>Student</span>
-            </button>
-            
-            <button
-              onClick={() => handleQuickLogin('faculty')}
-              className="p-2.5 bg-indigo-600/20 hover:bg-indigo-600/30 border border-indigo-500/30 text-indigo-300 font-bold text-xs rounded-xl transition-all flex flex-col items-center justify-center space-y-1"
-            >
-              <BookOpen className="w-4 h-4 text-indigo-400" />
-              <span>Faculty</span>
-            </button>
-
-            <button
-              onClick={() => handleQuickLogin('admin')}
-              className="p-2.5 bg-amber-600/20 hover:bg-amber-600/30 border border-amber-500/30 text-amber-300 font-bold text-xs rounded-xl transition-all flex flex-col items-center justify-center space-y-1"
-            >
-              <ShieldAlert className="w-4 h-4 text-amber-400" />
-              <span>Admin</span>
-            </button>
-          </div>
-        </div>
-
-        {/* Email & Password Sign In Form */}
+      <div className="mt-8 sm:mx-auto sm:w-full sm:max-w-md relative z-10 px-4">
         <div className="bg-slate-900 border border-slate-800 py-8 px-6 shadow-2xl sm:rounded-3xl sm:px-10">
-          
           {errorMsg && (
             <div className="mb-4 p-3 bg-red-500/10 border border-red-500/30 rounded-xl text-xs text-red-400 flex items-center space-x-2">
               <AlertCircle className="w-4 h-4 shrink-0" />
@@ -117,7 +65,7 @@ export default function CentralizedLoginPage() {
                   type="email"
                   value={email}
                   onChange={(e) => setEmail(e.target.value)}
-                  placeholder="student@college.edu"
+                  placeholder="you@college.edu"
                   className="w-full pl-10 pr-4 py-2.5 bg-slate-950 border border-slate-800 rounded-xl text-xs text-white placeholder-slate-500 focus:ring-2 focus:ring-blue-500 focus:outline-none"
                 />
               </div>
@@ -156,10 +104,8 @@ export default function CentralizedLoginPage() {
               </Link>
             </p>
           </div>
-
         </div>
       </div>
-
     </div>
   );
 }
