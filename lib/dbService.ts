@@ -221,6 +221,31 @@ export class DatabaseService {
     return bankId ? MOCK_QUESTIONS.filter((q) => q.bank_id === bankId) : MOCK_QUESTIONS;
   }
 
+  static async getQuestionsForStudent(department?: string, year?: string): Promise<Question[]> {
+    try {
+      const supabase = this.getSupabase();
+      const { data, error } = await supabase.from('questions').select('*');
+      if (!error && data) return data as Question[];
+    } catch (e) {
+      console.warn('Supabase DB getQuestionsForStudent error:', e);
+    }
+
+    let questions = [...MOCK_QUESTIONS];
+    if (department) {
+      questions = questions.filter((question) => {
+        const targetDepartment = question.target_department || 'All Departments';
+        return targetDepartment === 'All Departments' || targetDepartment.toLowerCase() === department.toLowerCase();
+      });
+    }
+    if (year) {
+      questions = questions.filter((question) => {
+        const targetYear = question.target_year || 'All Years';
+        return targetYear === 'All Years' || targetYear.toLowerCase().startsWith(year.toLowerCase());
+      });
+    }
+    return questions;
+  }
+
   static async createQuestion(question: Partial<Question>): Promise<Question> {
     try {
       const supabase = this.getSupabase();
@@ -319,7 +344,9 @@ export class DatabaseService {
         test_id: attemptData.test_id,
         student_id: attemptData.student_id,
         score: attemptData.score,
-        status: 'submitted',
+        status: attemptData.status || 'submitted',
+        started_at: attemptData.started_at,
+        submitted_at: attemptData.submitted_at,
       }]).select().single();
       if (!error && data) return data as TestAttempt;
     } catch (e) {
@@ -332,14 +359,61 @@ export class DatabaseService {
       student_id: attemptData.student_id || 's1111111-1111-1111-1111-111111111111',
       student_name: attemptData.student_name || 'Alex Johnson',
       started_at: attemptData.started_at || new Date().toISOString(),
-      submitted_at: new Date().toISOString(),
+      submitted_at: attemptData.submitted_at || new Date().toISOString(),
       score: attemptData.score !== undefined ? attemptData.score : 85,
       max_score: 100,
-      status: 'submitted',
+      status: attemptData.status || 'submitted',
       flag_count: attemptData.flag_count || 0,
     };
     MOCK_TEST_ATTEMPTS.unshift(newAttempt);
     return newAttempt;
+  }
+
+  static async getVerificationSession(sessionId: string): Promise<any> {
+    try {
+      const supabase = this.getSupabase();
+      const { data, error } = await supabase.from('verification_sessions').select('*').eq('id', sessionId).maybeSingle();
+      if (!error && data) return data;
+    } catch (e) {
+      console.warn('Supabase DB getVerificationSession error:', e);
+    }
+    return null;
+  }
+
+  static async updateVerificationSession(sessionId: string, updates: Record<string, any>): Promise<void> {
+    try {
+      const supabase = this.getSupabase();
+      await supabase.from('verification_sessions').update(updates).eq('id', sessionId);
+    } catch (e) {
+      console.warn('Supabase DB updateVerificationSession error:', e);
+    }
+  }
+
+  static async getReadinessScore(studentId: string): Promise<{ overall_score: number }> {
+    const score = MOCK_TEST_ATTEMPTS.filter((attempt) => attempt.student_id === studentId).reduce((total, attempt) => total + (attempt.score || 0), 0);
+    const attempts = MOCK_TEST_ATTEMPTS.filter((attempt) => attempt.student_id === studentId).length || 1;
+    return { overall_score: Math.min(100, Math.round(score / attempts)) };
+  }
+
+  static async createVerificationSession(assessmentId: string, studentId: string): Promise<{ id: string }> {
+    const id = 'vs-' + Math.random().toString(36).substring(2, 9);
+    return { id };
+  }
+
+  static async uploadVerificationFile(file: Blob | File, filePath: string): Promise<{ path: string }> {
+    return { path: filePath };
+  }
+
+  static async saveProctoringEvidence(event: Record<string, any>): Promise<{ id: string }> {
+    return { id: 'pe-' + Math.random().toString(36).substring(2, 9) };
+  }
+
+  static async terminateTestAttempt(targetId: string, flagCount: number, reason: string): Promise<void> {
+    const attempt = MOCK_TEST_ATTEMPTS.find((item) => item.id === targetId);
+    if (attempt) {
+      attempt.status = 'flagged';
+      attempt.flag_count = flagCount;
+    }
   }
 
   // PROCTORING EVENTS

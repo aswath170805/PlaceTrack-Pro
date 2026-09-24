@@ -5,6 +5,7 @@ export interface Profile {
   role: 'student' | 'faculty' | 'admin';
   department: string;
   year_of_study: string;
+  academic_year?: string;
   batch_id?: string;
   is_verified?: boolean;
   avatar_url?: string;

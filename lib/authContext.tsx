@@ -124,6 +124,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         role: data.role,
         department: data.department,
         year_of_study: data.yearOfStudy || 'Final Year',
+        academic_year: (data.yearOfStudy || '4th').replace(' Year', ''),
         batch_id: data.batchId,
         created_at: new Date().toISOString(),
       };
